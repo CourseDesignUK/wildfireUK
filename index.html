@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- iOS & Mobile Viewport: Lock down zooming while respecting safe-area insets -->
+  <!-- Mobile Viewport: Lock down zooming on UI chrome while respecting iPhone safe-area insets -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="UK Fire Risk" />
+  <meta name="apple-mobile-web-app-title" content="Fire Risk" />
   <meta name="format-detection" content="telephone=no" />
-  <title>UK Fire Risk Viewer | Copernicus EFFIS Mobile</title>
+  <title>European Fire Risk Viewer | Copernicus EFFIS Mobile</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +26,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* Prevent text selection and unwanted iOS Safari double-tap zoom gestures globally */
+    /* Prevent text selection and unwanted iOS Safari zoom gestures globally */
     *, *::before, *::after {
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
@@ -75,7 +75,7 @@
        PREMIUM FROSTED GLASS TOKENS (Glassmorphism)
        ========================================================================= */
     .glass-panel {
-      background: rgba(15, 23, 42, 0.65);
+      background: rgba(15, 23, 42, 0.68);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.14);
@@ -90,26 +90,25 @@
     }
 
     .glass-input {
-      background: rgba(2, 6, 23, 0.55);
+      background: rgba(2, 6, 23, 0.60);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.16);
     }
 
     .glass-pill {
-      background: rgba(15, 23, 42, 0.72);
+      background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(18px) saturate(160%);
       -webkit-backdrop-filter: blur(18px) saturate(160%);
       border: 1px solid rgba(255, 255, 255, 0.18);
     }
 
-    /* Subtle shimmer sheen on buttons */
     .glass-btn-accent {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.90) 0%, rgba(225, 29, 72, 0.90) 100%);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.92) 0%, rgba(225, 29, 72, 0.92) 100%);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.28);
     }
 
     /* Pulse animations */
@@ -118,7 +117,7 @@
     }
     @keyframes pulseAnim {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.2); }
+      50% { opacity: 0.4; transform: scale(1.25); }
     }
 
     .rotate-phone-anim {
@@ -142,7 +141,7 @@
 
     /* Leaflet popup styling in frosted glass */
     .leaflet-popup-content-wrapper {
-      background: rgba(15, 23, 42, 0.85) !important;
+      background: rgba(15, 23, 42, 0.88) !important;
       backdrop-filter: blur(16px) saturate(160%) !important;
       -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
       color: #f8fafc !important;
@@ -152,13 +151,13 @@
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45) !important;
     }
     .leaflet-popup-tip {
-      background: rgba(15, 23, 42, 0.85) !important;
+      background: rgba(15, 23, 42, 0.88) !important;
       backdrop-filter: blur(16px) !important;
       -webkit-backdrop-filter: blur(16px) !important;
     }
 
     /* Landscape Blocker for iPhone/Mobile */
-    @media (orientation: landscape) and (max-height: 550px) {
+    @media (orientation: landscape) and (max-height: 520px) {
       #portraitLockScreen {
         display: flex !important;
       }
@@ -170,13 +169,14 @@
   <!-- ========================================== -->
   <!-- 0. FULL-SCREEN VIDEO SPLASH INTRO (ROOT)   -->
   <!-- ========================================== -->
-  <div id="videoSplashOverlay" class="fixed inset-0 z-[110] bg-black flex items-center justify-center overflow-hidden transition-opacity duration-700 select-none">
+  <div id="videoSplashOverlay" style="display: flex;" class="fixed inset-0 z-[110] bg-black items-center justify-center overflow-hidden transition-opacity duration-700 select-none">
     <video 
       id="introVideo" 
       class="absolute inset-0 w-full h-full object-cover pointer-events-none"
       autoplay 
       muted 
       playsinline 
+      webkit-playsinline
       preload="auto">
       <source src="intro.mp4" type="video/mp4" />
       Your browser does not support HTML5 video.
@@ -186,10 +186,10 @@
     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/60 pointer-events-none"></div>
 
     <!-- Center-Bottom Skip Button Container -->
-    <div class="absolute bottom-8 sm:bottom-10 inset-x-0 flex flex-col items-center justify-center px-4 pb-safe z-10 pointer-events-auto">
+    <div class="absolute bottom-8 sm:bottom-10 inset-x-0 flex flex-col items-center justify-center px-4 pb-safe z-20 pointer-events-auto">
       <button 
         id="skipIntroVideoBtn" 
-        class="h-12 px-7 rounded-full glass-panel hover:bg-slate-800/80 active:scale-95 text-xs font-bold tracking-wider uppercase text-amber-300 border border-amber-400/40 shadow-2xl flex items-center gap-2.5 transition-all">
+        class="h-12 px-7 rounded-full glass-panel hover:bg-slate-800/80 active:scale-95 text-xs font-bold tracking-wider uppercase text-amber-300 border border-amber-400/40 shadow-2xl flex items-center gap-2.5 transition-all cursor-pointer">
         <span>Skip Intro</span>
         <i data-lucide="chevrons-right" class="w-4 h-4"></i>
       </button>
@@ -205,14 +205,14 @@
     </div>
     <h2 class="text-lg font-bold text-slate-100 tracking-tight mb-1">Portrait Mode Required</h2>
     <p class="text-xs text-slate-300 max-w-xs leading-relaxed">
-      This Copernicus EFFIS Fire Risk tool is locked to portrait orientation for mobile iPhones. Please rotate your device upright.
+      This Copernicus EFFIS Fire Risk monitor is optimized for portrait orientation on mobile devices. Please rotate your phone upright.
     </p>
   </div>
 
   <!-- ========================================== -->
   <!-- 2. SPLASH SCREEN & API CONFIGURATION MODAL -->
   <!-- ========================================== -->
-  <div id="apiSplashModal" class="fixed inset-0 z-[90] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4">
+  <div id="apiSplashModal" style="display: none;" class="fixed inset-0 z-[90] bg-slate-950/80 backdrop-blur-xl items-center justify-center p-4 transition-opacity duration-300">
     <div class="w-full max-w-md glass-panel rounded-3xl p-6 shadow-2xl space-y-4">
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-rose-600 to-red-700 flex items-center justify-center shadow-lg shadow-rose-950/50 shrink-0 border border-white/20">
@@ -230,15 +230,15 @@
       <div class="p-3.5 glass-card rounded-2xl text-xs space-y-2 text-slate-300">
         <div class="flex items-start gap-2">
           <i data-lucide="globe-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
-          <span><strong>Territories:</strong> Unified coverage for United Kingdom, Germany (Brandenburg/Bavaria/Harz), and Cyprus (Troodos & Akamas).</span>
+          <span><strong>Territories:</strong> Real-time Canadian FWI modeling for the United Kingdom, Germany, and Cyprus.</span>
         </div>
         <div class="flex items-start gap-2">
           <i data-lucide="cloud-sun" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
-          <span><strong>Open-Meteo API:</strong> Active by default without key. Queries live temperature, humidity, wind & rain.</span>
+          <span><strong>Open-Meteo API:</strong> Active by default without an API key. Polls live temp, humidity, wind & precipitation.</span>
         </div>
         <div class="flex items-start gap-2">
           <i data-lucide="satellite" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
-          <span><strong>NASA FIRMS API:</strong> Live satellite thermal hotspots (VIIRS 375m/MODIS). Enter your key below or run Demo Mode.</span>
+          <span><strong>NASA FIRMS API:</strong> VIIRS 375m / MODIS active thermal anomalies. Enter your Map Key below or use Demo Mode.</span>
         </div>
       </div>
 
@@ -261,11 +261,11 @@
       </div>
 
       <div class="pt-2 flex flex-col gap-2">
-        <button id="saveKeyAndLaunchBtn" class="w-full py-3 px-4 rounded-xl glass-btn-accent active:scale-[0.99] font-bold text-xs text-slate-950 tracking-wide flex items-center justify-center gap-2">
+        <button id="saveKeyAndLaunchBtn" class="w-full py-3 px-4 rounded-xl glass-btn-accent active:scale-[0.99] font-bold text-xs text-slate-950 tracking-wide flex items-center justify-center gap-2 cursor-pointer">
           <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
           <span>Launch Live Monitor</span>
         </button>
-        <button id="skipKeyBtn" class="w-full py-2.5 px-4 rounded-xl glass-card hover:bg-slate-800/80 active:scale-[0.99] text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition-colors">
+        <button id="skipKeyBtn" class="w-full py-2.5 px-4 rounded-xl glass-card hover:bg-slate-800/80 active:scale-[0.99] text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
           <span>Continue with Demo Mode</span>
           <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
         </button>
@@ -276,7 +276,7 @@
   <!-- ========================================== -->
   <!-- 2B. APP INFO & SOURCES MODAL               -->
   <!-- ========================================== -->
-  <div id="infoModal" class="hidden fixed inset-0 z-[95] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4">
+  <div id="infoModal" style="display: none;" class="fixed inset-0 z-[95] bg-slate-950/80 backdrop-blur-xl items-center justify-center p-4 transition-opacity duration-300">
     <div class="w-full max-w-lg glass-panel rounded-3xl p-6 shadow-2xl max-h-[85vh] flex flex-col border border-white/20">
       <div class="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
         <div class="flex items-center gap-2.5">
@@ -288,7 +288,7 @@
             <p class="text-[10px] text-slate-300">Coverage: UK • Germany • Cyprus</p>
           </div>
         </div>
-        <button id="closeInfoBtn" class="p-1.5 rounded-full hover:bg-slate-800/60 text-slate-300">
+        <button id="closeInfoBtn" class="p-1.5 rounded-full hover:bg-slate-800/60 text-slate-300 cursor-pointer">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -297,7 +297,7 @@
         <div>
           <h4 class="font-semibold text-amber-300 text-xs uppercase tracking-wider mb-1">What this App Does</h4>
           <p>
-            Provides mobile-first Canadian Forest Fire Danger Rating System (CFFDRS) calculations and EFFIS fire risk monitoring across the UK, Germany, and Cyprus. It calculates Fire Weather Index (FWI), Fine Fuel Moisture (FFMC), Initial Spread Index (ISI), and Drought Code (DC) mapped over OpenStreetMap or Google Satellite imagery.
+            Provides mobile-first Canadian Forest Fire Danger Rating System (CFFDRS) computations and EFFIS fire risk monitoring across the UK, Germany, and Cyprus. It calculates Fire Weather Index (FWI), Fine Fuel Moisture (FFMC), Initial Spread Index (ISI), and Drought Code (DC) mapped over OpenStreetMap or Google Satellite imagery.
           </p>
         </div>
 
@@ -323,14 +323,14 @@
           <h4 class="font-semibold text-rose-300 text-xs uppercase tracking-wider mb-1">Adding Your Free NASA FIRMS API Key</h4>
           <ol class="list-decimal pl-4 space-y-1 text-slate-300 text-[11px]">
             <li>Visit <span class="font-mono text-amber-300 underline">firms.modaps.eosdis.nasa.gov/api/map_key/</span>.</li>
-            <li>Register with your email to receive an instant 32-character Map Key.</li>
+            <li>Register with your email to receive a complimentary 32-character Map Key.</li>
             <li>Tap the <i data-lucide="key" class="w-3 h-3 inline text-amber-400"></i> icon in the top header and paste your key.</li>
           </ol>
         </div>
       </div>
 
       <div class="pt-3 border-t border-white/10 shrink-0">
-        <button id="infoGoToKeyBtn" class="w-full py-2.5 rounded-xl glass-btn-accent text-slate-950 font-bold text-xs tracking-wide flex items-center justify-center gap-1.5">
+        <button id="infoGoToKeyBtn" class="w-full py-2.5 rounded-xl glass-btn-accent text-slate-950 font-bold text-xs tracking-wide flex items-center justify-center gap-1.5 cursor-pointer">
           <i data-lucide="key" class="w-3.5 h-3.5 fill-current"></i>
           <span>Configure NASA FIRMS Key</span>
         </button>
@@ -379,17 +379,17 @@
         </div>
 
         <!-- Info Modal Trigger -->
-        <button id="openInfoBtn" title="Information & Sources" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl glass-card text-slate-200 hover:text-amber-300 active:scale-95 transition-all">
+        <button id="openInfoBtn" title="Information & Sources" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl glass-card text-slate-200 hover:text-amber-300 active:scale-95 transition-all cursor-pointer">
           <i data-lucide="info" class="w-4 h-4"></i>
         </button>
 
         <!-- API Settings Trigger -->
-        <button id="openApiSettingsBtn" title="API Keys" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl glass-card text-amber-400 hover:text-white active:scale-95 transition-all">
+        <button id="openApiSettingsBtn" title="API Keys" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl glass-card text-amber-400 hover:text-white active:scale-95 transition-all cursor-pointer">
           <i data-lucide="key" class="w-4 h-4"></i>
         </button>
 
         <!-- Layers Drawer Trigger -->
-        <button id="openLayersBtn" title="Layers & Presets" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl glass-card text-slate-200 hover:text-white active:scale-95 transition-all">
+        <button id="openLayersBtn" title="Layers & Presets" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl glass-card text-slate-200 hover:text-white active:scale-95 transition-all cursor-pointer">
           <i data-lucide="layers" class="w-4 h-4"></i>
         </button>
       </div>
@@ -405,7 +405,7 @@
     <!-- Quick Floating Action Buttons (Top Left) -->
     <div class="absolute top-3 left-3 z-20 flex flex-col gap-2 pointer-events-auto">
       <!-- Locate Me GPS Pill Button -->
-      <button id="locateMeBtn" class="h-9 px-3 rounded-full glass-btn-accent active:scale-95 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all">
+      <button id="locateMeBtn" class="h-9 px-3 rounded-full glass-btn-accent active:scale-95 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-lg">
         <i data-lucide="crosshair" class="w-3.5 h-3.5 stroke-[2.5]"></i>
         <span id="locateBtnLabel">Locate (20 mi)</span>
       </button>
@@ -493,14 +493,14 @@
     <div class="absolute bottom-2 left-2 right-2 z-20 glass-panel rounded-3xl p-3 shadow-2xl">
       <div class="flex items-center justify-between text-xs mb-2">
         <div class="flex items-center gap-2">
-          <button id="playTimelineBtn" class="w-7 h-7 rounded-xl glass-btn-accent active:scale-95 text-slate-950 flex items-center justify-center font-bold transition-transform">
+          <button id="playTimelineBtn" class="w-7 h-7 rounded-xl glass-btn-accent active:scale-95 text-slate-950 flex items-center justify-center font-bold transition-transform cursor-pointer">
             <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
           </button>
           <span id="forecastDayBadge" class="font-mono text-amber-300 font-bold bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/40 text-[10px]">
             D+0 (Today)
           </span>
         </div>
-        <button id="toggleInspectorBtn" class="text-[11px] text-amber-300 font-semibold flex items-center gap-1 active:text-amber-200 transition-colors">
+        <button id="toggleInspectorBtn" class="text-[11px] text-amber-300 font-semibold flex items-center gap-1 active:text-amber-200 transition-colors cursor-pointer">
           <span>Point Inspector</span>
           <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
         </button>
@@ -545,7 +545,7 @@
         <span id="meteoSourceBadge" class="text-[9px] font-mono text-cyan-300 bg-cyan-950/70 px-2 py-0.5 rounded-full border border-cyan-700/50">
           Open-Meteo Live
         </span>
-        <button id="closeInspectorBtn" class="p-1.5 rounded-full hover:bg-slate-800/50 text-slate-300">
+        <button id="closeInspectorBtn" class="p-1.5 rounded-full hover:bg-slate-800/50 text-slate-300 cursor-pointer">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -644,7 +644,7 @@
 
       <!-- Local Fire Commentary -->
       <div class="p-3 rounded-2xl glass-card border-amber-500/30 text-[11px] text-slate-200 leading-relaxed" id="inspVulnerabilityDesc">
-        Fine fuels exhibit moderate desiccation. Surface fires in dry fuels, needle litter, and grasses can spread rapidly with gusty surface winds.
+        Fine fuels exhibit moderate desiccation. Surface fires in dry needle litter and grasses can spread rapidly with sustained surface winds.
       </div>
     </div>
   </div>
@@ -661,7 +661,7 @@
         <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
         <h3 class="font-bold text-xs uppercase tracking-wider text-slate-100">EFFIS Layers & Presets</h3>
       </div>
-      <button id="closeLayersBtn" class="p-1.5 rounded-full hover:bg-slate-800/50 text-slate-300">
+      <button id="closeLayersBtn" class="p-1.5 rounded-full hover:bg-slate-800/50 text-slate-300 cursor-pointer">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
@@ -672,19 +672,19 @@
         <label class="block uppercase font-bold text-[10px] tracking-wider text-slate-300 mb-2">Primary Fire Danger Index</label>
         <div class="grid grid-cols-2 gap-2">
           <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
-            <input type="radio" name="primaryLayer" value="fwi" checked class="accent-amber-500" />
+            <input type="radio" name="primaryLayer" value="fwi" checked class="accent-amber-500 cursor-pointer" />
             <div class="font-semibold text-slate-100 text-xs">FWI (Intensity)</div>
           </label>
           <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
-            <input type="radio" name="primaryLayer" value="ffmc" class="accent-amber-500" />
+            <input type="radio" name="primaryLayer" value="ffmc" class="accent-amber-500 cursor-pointer" />
             <div class="font-semibold text-slate-100 text-xs">FFMC (Fine Fuel)</div>
           </label>
           <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
-            <input type="radio" name="primaryLayer" value="isi" class="accent-amber-500" />
+            <input type="radio" name="primaryLayer" value="isi" class="accent-amber-500 cursor-pointer" />
             <div class="font-semibold text-slate-100 text-xs">ISI (Spread Rate)</div>
           </label>
           <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
-            <input type="radio" name="primaryLayer" value="dc" class="accent-amber-500" />
+            <input type="radio" name="primaryLayer" value="dc" class="accent-amber-500 cursor-pointer" />
             <div class="font-semibold text-slate-100 text-xs">DC (Drought Code)</div>
           </label>
         </div>
@@ -706,14 +706,14 @@
             <span class="text-slate-100 font-medium">NASA FIRMS Satellite Hotspots</span>
             <span class="text-[10px] text-slate-400" id="hotspotsLayerStatus">Live / Simulated</span>
           </div>
-          <input id="toggleHotspots" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded" />
+          <input id="toggleHotspots" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer" />
         </label>
         <label class="flex items-center justify-between p-3 rounded-2xl glass-card cursor-pointer">
           <div class="flex flex-col">
             <span class="text-slate-100 font-medium">Vulnerable Biomes & Nature Reserves</span>
             <span class="text-[10px] text-slate-400" id="vulnerableBiomeLabel">Peatlands, Heaths, Maquis</span>
           </div>
-          <input id="togglePeatlands" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded" />
+          <input id="togglePeatlands" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer" />
         </label>
       </div>
 
@@ -722,10 +722,18 @@
         <label class="block uppercase font-bold text-[10px] tracking-wider text-slate-300 mb-1.5" id="presetSelectLabel">
           Regional Presets
         </label>
-        <select id="presetSelect" class="w-full p-3 rounded-2xl glass-input text-slate-100 text-xs font-medium focus:outline-none">
-          <!-- Populated dynamically via JS -->
+        <select id="presetSelect" class="w-full p-3 rounded-2xl glass-input text-slate-100 text-xs font-medium focus:outline-none cursor-pointer">
+          <!-- Populated dynamically via JavaScript -->
         </select>
-    const FIRMS_STORAGE_KEY = 'EFFIS_UK_NASA_FIRMS_KEY';
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 7. APPLICATION LOGIC & GEOSPATIAL ENGINE   -->
+  <!-- ========================================== -->
+  <script>
+    const FIRMS_STORAGE_KEY = 'EFFIS_EUROPE_NASA_FIRMS_KEY';
     let firmsApiKey = localStorage.getItem(FIRMS_STORAGE_KEY) || '';
 
     const apiSplashModal = document.getElementById('apiSplashModal');
@@ -734,9 +742,11 @@
     const skipKeyBtn = document.getElementById('skipKeyBtn');
     const openApiSettingsBtn = document.getElementById('openApiSettingsBtn');
 
-    /* =========================================================================
-       2B. VIDEO SPLASH CONTROLLER (intro.mp4)
-       ========================================================================= */
+    const infoModal = document.getElementById('infoModal');
+    const openInfoBtn = document.getElementById('openInfoBtn');
+    const closeInfoBtn = document.getElementById('closeInfoBtn');
+    const infoGoToKeyBtn = document.getElementById('infoGoToKeyBtn');
+
     const videoSplashOverlay = document.getElementById('videoSplashOverlay');
     const introVideo = document.getElementById('introVideo');
     const skipIntroVideoBtn = document.getElementById('skipIntroVideoBtn');
@@ -745,41 +755,59 @@
     function dismissVideoIntro() {
       if (introDismissed) return;
       introDismissed = true;
+
       if (introVideo) {
-        introVideo.pause();
+        introVideo.onended = null;
+        introVideo.onerror = null;
+        try { introVideo.pause(); } catch(e) {}
       }
-      videoSplashOverlay.classList.add('opacity-0', 'pointer-events-none');
-      setTimeout(() => {
-        videoSplashOverlay.classList.add('hidden');
-        // Proceed with normal launch flow
-        if (firmsApiKey) {
-          hideSplash();
-          fetchThermalHotspots();
-        } else {
-          showSplash();
-        }
-      }, 700);
+
+      if (videoSplashOverlay) {
+        // Cut pointer events immediately to unfreeze the UI
+        videoSplashOverlay.style.pointerEvents = 'none';
+        videoSplashOverlay.classList.add('opacity-0');
+
+        setTimeout(() => {
+          videoSplashOverlay.style.display = 'none';
+
+          // Critical: Force Leaflet to calculate non-zero viewport dimensions
+          if (typeof map !== 'undefined' && map) {
+            map.invalidateSize();
+          }
+
+          // Trigger API settings or proceed to monitor
+          if (firmsApiKey) {
+            hideSplash();
+            fetchThermalHotspots();
+          } else {
+            showSplash();
+          }
+        }, 650);
+      } else {
+        if (typeof map !== 'undefined' && map) map.invalidateSize();
+        if (firmsApiKey) { hideSplash(); fetchThermalHotspots(); } else { showSplash(); }
+      }
     }
 
     if (skipIntroVideoBtn) {
-      skipIntroVideoBtn.addEventListener('click', dismissVideoIntro);
+      skipIntroVideoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissVideoIntro();
+      });
     }
 
     if (introVideo) {
-      // Auto-transition when video completes playback
       introVideo.addEventListener('ended', dismissVideoIntro);
-
-      // Graceful fallback if video fails to load or file is missing
       introVideo.addEventListener('error', () => {
-        console.warn('intro.mp4 failed to load or is not present. Skipping video splash.');
+        console.warn('intro.mp4 failed to load; bypassing splash video.');
         dismissVideoIntro();
       });
 
-      // Attempt autoplay with promise fallback
       const playPromise = introVideo.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
-          console.warn('Autoplay restricted or video load delayed:', err);
+          console.warn('Video autoplay prevented or source absent; continuing:', err);
+          dismissVideoIntro();
         });
       }
     } else {
@@ -791,13 +819,39 @@
       document.getElementById('keyStatusBadge').textContent = 'Key Saved';
     }
 
-    function hideSplash() { apiSplashModal.classList.add('hidden'); }
-    function showSplash() { apiSplashModal.classList.remove('hidden'); }
+    function hideSplash() {
+      apiSplashModal.classList.add('opacity-0');
+      apiSplashModal.style.pointerEvents = 'none';
+      setTimeout(() => {
+        apiSplashModal.style.display = 'none';
+        if (typeof map !== 'undefined' && map) map.invalidateSize();
+      }, 300);
+    }
 
-    openInfoBtn.addEventListener('click', () => infoModal.classList.remove('hidden'));
-    closeInfoBtn.addEventListener('click', () => infoModal.classList.add('hidden'));
+    function showSplash() {
+      apiSplashModal.style.display = 'flex';
+      apiSplashModal.style.pointerEvents = 'auto';
+      setTimeout(() => apiSplashModal.classList.remove('opacity-0'), 10);
+    }
+
+    function showInfoModal() {
+      infoModal.style.display = 'flex';
+      infoModal.style.pointerEvents = 'auto';
+      setTimeout(() => infoModal.classList.remove('opacity-0'), 10);
+    }
+
+    function hideInfoModal() {
+      infoModal.classList.add('opacity-0');
+      infoModal.style.pointerEvents = 'none';
+      setTimeout(() => {
+        infoModal.style.display = 'none';
+      }, 300);
+    }
+
+    openInfoBtn.addEventListener('click', showInfoModal);
+    closeInfoBtn.addEventListener('click', hideInfoModal);
     infoGoToKeyBtn.addEventListener('click', () => {
-      infoModal.classList.add('hidden');
+      hideInfoModal();
       showSplash();
     });
 
@@ -822,13 +876,8 @@
       fetchThermalHotspots();
     });
 
-    openApiSettingsBtn.addEventListener('click', () => {
-      showSplash();
-    });
+    openApiSettingsBtn.addEventListener('click', showSplash);
 
-    /* =========================================================================
-       3. REGIONAL TERRITORIES CONFIGURATION (UK, GERMANY, CYPRUS)
-       ========================================================================= */
     const METERS_PER_MILE = 1609.344;
     let operationalRadiusMiles = 20;
     let currentTerritory = 'UK';
@@ -870,7 +919,7 @@
       DE: {
         name: 'Germany',
         code: 'DE',
-        center: [52.130, 12.980], // Brandenburg
+        center: [52.130, 12.980],
         zoom: 8,
         bbox: '5.86,47.27,15.04,55.05',
         biomeDescription: 'Pine Monocultures, Sandy Podzols & Conifer Dieback',
@@ -898,7 +947,7 @@
       CY: {
         name: 'Cyprus',
         code: 'CY',
-        center: [34.920, 32.880], // Troodos
+        center: [34.920, 32.880],
         zoom: 10,
         bbox: '32.25,34.55,34.65,35.75',
         biomeDescription: 'Calabrian Pine (Pinus brutia), Garrigue & Maquis',
@@ -935,7 +984,6 @@
       for (let lat = gb.latMin; lat <= gb.latMax; lat += gb.latStep) {
         for (let lon = gb.lonMin; lon <= gb.lonMax; lon += gb.lonStep) {
           let keep = true;
-          // UK land filter
           if (territoryKey === 'UK') {
             const inScotland = lat > 54.8 && lat <= 58.6 && lon > -7.0 && lon < -1.4;
             const inEnglandWales = lat >= 50.0 && lat <= 54.8 && lon > -5.6 && lon < 1.7;
@@ -944,7 +992,6 @@
           } else if (territoryKey === 'DE') {
             keep = (lat >= 47.4 && lat <= 54.8 && lon >= 6.0 && lon <= 14.8);
           } else if (territoryKey === 'CY') {
-            // Cyprus rough oval filter to avoid blank sea
             const cLat = 35.0, cLon = 33.2;
             const d = Math.pow((lat - cLat) / 0.45, 2) + Math.pow((lon - cLon) / 1.1, 2);
             keep = d <= 1.05;
@@ -977,9 +1024,6 @@
       return grid;
     }
 
-    /* =========================================================================
-       4. LEAFLET INITIALIZATION (DEFAULT: OPENSTREETMAP)
-       ========================================================================= */
     const map = L.map('map', {
       center: [currentCenterLat, currentCenterLng],
       zoom: 9,
@@ -1059,9 +1103,6 @@
       switchTerritory(e.target.value);
     });
 
-    /* =========================================================================
-       5. USER LOCATION & 20-MILE RADIUS BUFFER
-       ========================================================================= */
     function showToast(msg) {
       const toast = document.getElementById('statusToast');
       document.getElementById('statusToastMsg').textContent = msg;
@@ -1109,7 +1150,6 @@
           currentCenterLat = pos.coords.latitude;
           currentCenterLng = pos.coords.longitude;
 
-          // Auto-detect territory if GPS falls into Germany or Cyprus
           if (currentCenterLat >= 34.5 && currentCenterLat <= 35.8 && currentCenterLng >= 32.0 && currentCenterLng <= 34.8) {
             if (currentTerritory !== 'CY') switchTerritory('CY');
           } else if (currentCenterLat >= 47.0 && currentCenterLat <= 55.2 && currentCenterLng >= 5.5 && currentCenterLng <= 15.2) {
@@ -1124,7 +1164,7 @@
         },
         (err) => {
           console.warn('GPS location denied:', err);
-          showToast('GPS unavailable. Using default regional center.');
+          showToast('GPS unavailable. Using regional focus.');
           const terr = TERRITORIES[currentTerritory];
           currentCenterLat = terr.center[0];
           currentCenterLng = terr.center[1];
@@ -1156,9 +1196,6 @@
       showToast(`Jumped to ${name}`);
     });
 
-    /* =========================================================================
-       6. NASA FIRMS API (HOTSPOTS PER ACTIVE TERRITORY)
-       ========================================================================= */
     async function fetchThermalHotspots() {
       hotspotsLayerGroup.clearLayers();
       const statusLabel = document.getElementById('hotspotsLayerStatus');
@@ -1222,7 +1259,7 @@
         console.warn('NASA FIRMS API error or CORS restriction:', err);
         statusLabel.textContent = 'Demo Mode (Fallback)';
         renderHotspotArray(terr.demoHotspots);
-        showToast('FIRMS CORS notice: fallback demo hotspots active');
+        showToast('FIRMS notice: fallback demo hotspots active');
       }
     }
 
@@ -1248,9 +1285,6 @@
       });
     }
 
-    /* =========================================================================
-       7. OPEN-METEO API & LIVE WEATHER WIDGET UPDATER
-       ========================================================================= */
     let currentForecastDay = 0;
     let selectedActiveLayer = 'fwi';
     let globalOpacity = 0.35;
@@ -1303,7 +1337,7 @@
 
       let dmc = Math.max(5, Math.round(30 + (temp - 12) * 1.6 - rainMm * 2));
       let dc = Math.max(80, Math.round(260 + (temp - 10) * 10 - rainMm * 6));
-      if (currentTerritory === 'CY') dc = Math.round(dc * 1.35); // Mediterranean drought amplification
+      if (currentTerritory === 'CY') dc = Math.round(dc * 1.35);
       let bui = Math.round((0.8 * dmc * dc) / (dmc + 0.4 * dc));
 
       let fwi;
@@ -1392,7 +1426,7 @@
         }
 
         const pointData = {
-          name: customName || `Inspected Coordinate (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`,
+          name: customName || `Inspected Location (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`,
           lat,
           lon,
           habitat: TERRITORIES[currentTerritory].biomeDescription,
@@ -1481,10 +1515,8 @@
       });
     }
 
-    /* =========================================================================
-       8. POINT INSPECTOR & CHART.JS
-       ========================================================================= */
     const inspectorDrawer = document.getElementById('inspectorDrawer');
+    const layersDrawer = document.getElementById('layersDrawer');
 
     function openInspector() {
       inspectorDrawer.classList.remove('translate-y-full');
@@ -1585,9 +1617,6 @@
       fetchLiveMeteoAndInspect(currentCenterLat, currentCenterLng, 'Current Focus Center');
     });
 
-    /* =========================================================================
-       9. TIMELINE SCROLLER & BOTTOM SHEETS
-       ========================================================================= */
     const timelineRange = document.getElementById('timelineRange');
     const forecastDayBadge = document.getElementById('forecastDayBadge');
     const playTimelineBtn = document.getElementById('playTimelineBtn');
@@ -1617,7 +1646,6 @@
       }
     });
 
-    const layersDrawer = document.getElementById('layersDrawer');
     document.getElementById('openLayersBtn').addEventListener('click', () => {
       layersDrawer.classList.remove('translate-y-full');
       inspectorDrawer.classList.add('translate-y-full');
@@ -1653,17 +1681,24 @@
     document.getElementById('toggleHotspots').addEventListener('change', () => fetchThermalHotspots());
     document.getElementById('togglePeatlands').addEventListener('change', renderSensitiveAreas);
 
-    /* =========================================================================
-       10. APPLICATION INITIALIZATION
-       ========================================================================= */
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
+      ACTIVE_GRID = generateGridForTerritory(currentTerritory);
+      populatePresetsForTerritory(currentTerritory);
       renderEFFISOverlay();
       renderSensitiveAreas();
       renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
 
       // Initial live telemetry query for Cirencester default center
       fetchLiveMeteoAndInspect(currentCenterLat, currentCenterLng, 'Cirencester & Cotswolds');
+
+      // Safety timeout: If video takes longer than 6 seconds, dismiss automatically
+      setTimeout(() => {
+        if (!introDismissed) {
+          console.warn('Video splash timeout reached; auto-dismissing.');
+          dismissVideoIntro();
+        }
+      }, 6000);
     });
   </script>
 </body>
