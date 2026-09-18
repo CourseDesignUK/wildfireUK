@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- iOS & Mobile Viewport: Lock down zooming while respecting safe-area insets -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="UK Fire Risk" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>UK Fire Risk Viewer | Copernicus EFFIS Mobile</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for 7-day sparklines -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Prevent text selection and unwanted iOS Safari double-tap zoom gestures globally */
+    *, *::before, *::after {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      touch-action: pan-x pan-y;
+      -webkit-user-select: none;
+      user-select: none;
+      background-color: #020617;
+      color: #f8fafc;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Interactive controls allow immediate tapping without zoom latency */
+    button, select, input, label, a {
+      touch-action: manipulation;
+    }
+
+    /* Map container MUST allow multi-touch zoom and smooth gesture panning */
+    #map {
+      touch-action: auto !important;
+      -webkit-user-select: auto !important;
+      user-select: auto !important;
+      background: #0b1120;
+    }
+
+    /* iOS Safe Area Padding Utilities */
+    .pt-safe {
+      padding-top: env(safe-area-inset-top, 16px);
+    }
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    /* =========================================================================
+       PREMIUM FROSTED GLASS TOKENS (Glassmorphism)
+       ========================================================================= */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.60);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .glass-input {
+      background: rgba(2, 6, 23, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .glass-pill {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* Subtle shimmer sheen on buttons */
+    .glass-btn-accent {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.90) 0%, rgba(225, 29, 72, 0.90) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+    }
+
+    /* Pulse animations */
+    .badge-pulse {
+      animation: pulseAnim 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseAnim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
+
+    .rotate-phone-anim {
+      animation: rotatePhone 2.2s infinite ease-in-out;
+    }
+    @keyframes rotatePhone {
+      0% { transform: rotate(0deg); }
+      35% { transform: rotate(-90deg); }
+      70% { transform: rotate(-90deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    /* Scrollbar styling */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 4px;
+    }
+
+    /* Leaflet popup styling in frosted glass */
+    .leaflet-popup-content-wrapper {
+      background: rgba(15, 23, 42, 0.85) !important;
+      backdrop-filter: blur(16px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      border-radius: 16px !important;
+      padding: 4px !important;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45) !important;
+    }
+    .leaflet-popup-tip {
+      background: rgba(15, 23, 42, 0.85) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+    }
+
+    /* Landscape Blocker for iPhone/Mobile */
+    @media (orientation: landscape) and (max-height: 550px) {
+      #portraitLockScreen {
+        display: flex !important;
+      }
+    }
+  </style>
+</head>
+<body class="h-full w-full flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+
+  <!-- ========================================== -->
+  <!-- 1. IPHONE PORTRAIT LOCK WARNING SHIELD    -->
+  <!-- ========================================== -->
+  <div id="portraitLockScreen" class="hidden fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-2xl flex-col items-center justify-center p-6 text-center text-slate-100 select-none">
+    <div class="w-16 h-16 mb-4 rounded-2xl glass-card flex items-center justify-center border-amber-500/30">
+      <i data-lucide="smartphone" class="w-9 h-9 text-amber-400 rotate-phone-anim"></i>
+    </div>
+    <h2 class="text-lg font-bold text-slate-100 tracking-tight mb-1">Portrait Mode Required</h2>
+    <p class="text-xs text-slate-300 max-w-xs leading-relaxed">
+      This Copernicus EFFIS Fire Risk tool is locked to portrait orientation for mobile iPhones. Please rotate your device upright.
+    </p>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. SPLASH SCREEN & API CONFIGURATION MODAL -->
+  <!-- ========================================== -->
+  <div id="apiSplashModal" class="fixed inset-0 z-[90] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="w-full max-w-md glass-panel rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-rose-600 to-red-700 flex items-center justify-center shadow-lg shadow-rose-950/50 shrink-0 border border-white/20">
+          <i data-lucide="flame" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="font-bold text-base tracking-tight text-white">UK Fire Risk Viewer</h2>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">EFFIS</span>
+          </div>
+          <p class="text-xs text-slate-300">Live Canadian FWI & Hotspot Telemetry</p>
+        </div>
+      </div>
+
+      <div class="p-3.5 glass-card rounded-2xl text-xs space-y-2 text-slate-300">
+        <div class="flex items-start gap-2">
+          <i data-lucide="cloud-sun" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
+          <span><strong>Open-Meteo API:</strong> Active by default. Automatically queries live UK temperature, relative humidity, wind & precipitation.</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="satellite" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+          <span><strong>NASA FIRMS API:</strong> Live satellite thermal hotspots (VIIRS/MODIS 375m). Enter your free map key below or launch Demo Mode.</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+          NASA FIRMS MAP Key (Optional)
+        </label>
+        <div class="relative">
+          <input 
+            type="text" 
+            id="firmsApiKeyInput" 
+            placeholder="e.g. 8d39f47a19c48b72e90f142b8941..." 
+            class="w-full px-3.5 py-2.5 glass-input rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400 font-mono transition-colors"
+          />
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1.5 flex items-center justify-between">
+          <span>firms.modaps.eosdis.nasa.gov</span>
+          <span id="keyStatusBadge" class="text-amber-400 font-mono">Demo Fallback Ready</span>
+        </p>
+      </div>
+
+      <div class="pt-2 flex flex-col gap-2">
+        <button id="saveKeyAndLaunchBtn" class="w-full py-3 px-4 rounded-xl glass-btn-accent active:scale-[0.99] font-bold text-xs text-slate-950 tracking-wide flex items-center justify-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+          <span>Launch Live Monitor</span>
+        </button>
+        <button id="skipKeyBtn" class="w-full py-2.5 px-4 rounded-xl glass-card hover:bg-slate-800/80 active:scale-[0.99] text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition-colors">
+          <span>Continue with Demo Mode / Simulated Hotspots</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. TOP APP HEADER BAR (Frosted Glass)      -->
+  <!-- ========================================== -->
+  <header class="pt-safe glass-panel border-b border-white/10 z-30 shrink-0 select-none">
+    <div class="h-14 px-3.5 flex items-center justify-between gap-2">
+      <!-- Title & Buffer Badge -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 via-rose-600 to-red-700 flex items-center justify-center shadow-md shadow-rose-950/40 shrink-0 border border-white/20">
+          <i data-lucide="flame" class="w-4 h-4 text-white"></i>
+        </div>
+        <div class="leading-tight">
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-xs tracking-tight text-white">UK FIRE RISK</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">EFFIS</span>
+          </div>
+          <p class="text-[10px] text-slate-300 font-mono truncate max-w-[130px]" id="headerSubtext">20-Mile Focus Active</p>
+        </div>
+      </div>
+
+      <!-- Header Action Controls -->
+      <div class="flex items-center gap-1.5">
+        <!-- Basemap Selector (Default: OSM) -->
+        <div class="relative flex items-center glass-card rounded-xl px-2.5 py-1.5 min-h-[38px] hover:border-white/25 transition-colors">
+          <i data-lucide="map" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
+          <select id="basemapSelect" class="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none appearance-none pr-4 cursor-pointer">
+            <option value="osm" selected class="bg-slate-900 text-slate-100">OpenStreetMap</option>
+            <option value="googleSat" class="bg-slate-900 text-slate-100">Google Satellite</option>
+            <option value="cartoDark" class="bg-slate-900 text-slate-100">Carto Dark</option>
+          </select>
+          <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 absolute right-2 pointer-events-none"></i>
+        </div>
+
+        <!-- API Settings Trigger -->
+        <button id="openApiSettingsBtn" title="API Keys" class="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl glass-card text-amber-400 hover:text-white active:scale-95 transition-all">
+          <i data-lucide="key" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Layers Drawer Trigger -->
+        <button id="openLayersBtn" title="Layers" class="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl glass-card text-slate-200 hover:text-white active:scale-95 transition-all">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 4. MAIN MAP CANVAS & FROSTED WIDGETS       -->
+  <!-- ========================================== -->
+  <main class="relative flex-1 w-full h-full overflow-hidden">
+    <div id="map" class="w-full h-full z-10"></div>
+
+    <!-- Quick Floating Action Buttons (Top Left) -->
+    <div class="absolute top-3 left-3 z-20 flex flex-col gap-2 pointer-events-auto">
+      <!-- Locate Me GPS Pill Button -->
+      <button id="locateMeBtn" class="h-10 px-3.5 rounded-full glass-btn-accent active:scale-95 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all">
+        <i data-lucide="crosshair" class="w-4 h-4 stroke-[2.5]"></i>
+        <span id="locateBtnLabel">Locate Me (20 mi)</span>
+      </button>
+
+      <!-- Radius Selector Quick Toggle -->
+      <div class="h-9 px-3 rounded-full glass-pill text-slate-200 flex items-center gap-1.5 shadow-lg">
+        <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400"></i>
+        <select id="radiusSelect" class="bg-transparent text-xs font-mono text-amber-300 font-semibold focus:outline-none cursor-pointer appearance-none pr-3">
+          <option value="5" class="bg-slate-900 text-slate-100">5 mi (8km)</option>
+          <option value="10" class="bg-slate-900 text-slate-100">10 mi (16km)</option>
+          <option value="20" selected class="bg-slate-900 text-slate-100">20 mi (32km)</option>
+          <option value="50" class="bg-slate-900 text-slate-100">50 mi (80km)</option>
+        </select>
+        <i data-lucide="chevron-down" class="w-2.5 h-2.5 text-slate-400 -ml-2 pointer-events-none"></i>
+      </div>
+    </div>
+
+    <!-- Floating Live Weather Widget (Top Right) -->
+    <div id="floatingWeatherWidget" class="absolute top-3 right-3 z-20 glass-panel rounded-2xl p-2.5 shadow-xl pointer-events-auto min-w-[155px] transition-all cursor-pointer hover:border-white/30" title="Click to inspect live weather">
+      <div class="flex items-center justify-between gap-1 mb-1 pb-1 border-b border-white/10">
+        <div class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 badge-pulse"></span>
+          <span class="text-[9px] font-bold uppercase tracking-wider text-cyan-300">Live Weather</span>
+        </div>
+        <span class="text-[8px] font-mono text-slate-300" id="weatherSourceTag">Meteo Live</span>
+      </div>
+
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <i id="weatherConditionIcon" data-lucide="sun" class="w-5 h-5 text-amber-400 shrink-0"></i>
+          <div>
+            <div id="weatherWidgetTemp" class="text-base font-bold font-mono text-white leading-none">--°C</div>
+            <div id="weatherWidgetDesc" class="text-[9px] text-slate-300 font-medium">Fetching...</div>
+          </div>
+        </div>
+        <div class="text-right font-mono text-[9px] leading-tight text-slate-300 border-l border-white/10 pl-2">
+          <div><span class="text-cyan-300 font-semibold" id="weatherWidgetRH">--%</span> <span class="text-[8px] text-slate-400">RH</span></div>
+          <div><span class="text-amber-300 font-semibold" id="weatherWidgetWind">--</span> <span class="text-[8px] text-slate-400">km/h</span></div>
+          <div><span class="text-blue-300 font-semibold" id="weatherWidgetRain">--</span> <span class="text-[8px] text-slate-400">mm</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Compact EFFIS Legend (Middle Right) -->
+    <div class="absolute top-[88px] right-3 z-20 glass-panel rounded-2xl p-2.5 shadow-xl pointer-events-auto max-w-[130px]">
+      <div class="text-[9px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center justify-between">
+        <span id="legendMetricCode">FWI (35%)</span>
+        <span class="text-[8px] text-amber-400 font-mono font-bold">EFFIS</span>
+      </div>
+      <div class="flex flex-col gap-0.5 text-[8px] font-mono">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-[2px] bg-[#52b788] shrink-0"></span>
+          <span class="text-slate-200 truncate">V.Low (&lt;5)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-[2px] bg-[#b7e4c7] shrink-0"></span>
+          <span class="text-slate-200 truncate">Low (5-11)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-[2px] bg-[#ffea00] shrink-0"></span>
+          <span class="text-slate-200 truncate">Mod (11-21)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-[2px] bg-[#ff9e00] shrink-0"></span>
+          <span class="text-slate-200 truncate">High (21-38)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-[2px] bg-[#e63946] shrink-0"></span>
+          <span class="text-slate-200 truncate">V.High (38-50)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-[2px] bg-[#7209b7] shrink-0"></span>
+          <span class="text-slate-200 truncate">Extreme (&gt;50)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Toast Bar -->
+    <div id="statusToast" class="hidden absolute top-16 left-1/2 -translate-x-1/2 z-30 glass-panel border-amber-400/50 text-amber-300 px-3.5 py-1.5 rounded-full text-[11px] font-medium shadow-2xl flex items-center gap-2 whitespace-nowrap pointer-events-none">
+      <span class="w-2 h-2 rounded-full bg-amber-400 badge-pulse shrink-0"></span>
+      <span id="statusToastMsg">Fetching live Open-Meteo telemetry...</span>
+    </div>
+
+    <!-- Bottom Timeline Scrubber Player (Frosted Glass) -->
+    <div class="absolute bottom-2 left-2 right-2 z-20 glass-panel rounded-3xl p-3 shadow-2xl">
+      <div class="flex items-center justify-between text-xs mb-2">
+        <div class="flex items-center gap-2">
+          <button id="playTimelineBtn" class="w-7 h-7 rounded-xl glass-btn-accent active:scale-95 text-slate-950 flex items-center justify-center font-bold transition-transform">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+          </button>
+          <span id="forecastDayBadge" class="font-mono text-amber-300 font-bold bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/40 text-[10px]">
+            D+0 (Today)
+          </span>
+        </div>
+        <button id="toggleInspectorBtn" class="text-[11px] text-amber-300 font-semibold flex items-center gap-1 active:text-amber-200 transition-colors">
+          <span>Point Inspector</span>
+          <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <input 
+        id="timelineRange" 
+        type="range" 
+        min="0" 
+        max="6" 
+        value="0" 
+        step="1" 
+        class="w-full accent-amber-500 cursor-pointer h-2 bg-slate-800/80 rounded-lg appearance-none"
+      />
+      <div class="flex justify-between text-[8px] font-mono text-slate-300 mt-1 px-1">
+        <span>Today</span>
+        <span>D+1</span>
+        <span>D+2</span>
+        <span>D+3</span>
+        <span>D+4</span>
+        <span>D+5</span>
+        <span>D+6</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 5. POINT INSPECTOR SLIDE-UP DRAWER         -->
+  <!-- ========================================== -->
+  <div id="inspectorDrawer" class="fixed inset-x-0 bottom-0 z-40 glass-panel rounded-t-3xl shadow-2xl transition-transform duration-300 translate-y-full pb-safe flex flex-col max-h-[84vh] border-t border-white/20">
+    <div class="pt-2.5 pb-1 flex justify-center cursor-pointer" id="inspectorHandle">
+      <div class="w-12 h-1.5 rounded-full bg-slate-400/40"></div>
+    </div>
+
+    <!-- Inspector Header -->
+    <div class="px-4 py-2 border-b border-white/10 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <i data-lucide="crosshair" class="w-4 h-4 text-amber-400"></i>
+        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-100">Point Danger Inspector</h3>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="meteoSourceBadge" class="text-[9px] font-mono text-cyan-300 bg-cyan-950/70 px-2 py-0.5 rounded-full border border-cyan-700/50">
+          Open-Meteo Live
+        </span>
+        <button id="closeInspectorBtn" class="p-1.5 rounded-full hover:bg-slate-800/50 text-slate-300">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Inspector Scrollable Body -->
+    <div class="p-4 space-y-3.5 overflow-y-auto custom-scrollbar text-xs">
+      
+      <!-- Target Summary -->
+      <div class="glass-card rounded-2xl p-3">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="text-[9px] uppercase font-mono tracking-wider text-slate-400">Inspected Location</div>
+            <h4 id="inspLocationName" class="font-bold text-white text-sm">Cirencester & Cotswolds</h4>
+            <p id="inspCoords" class="font-mono text-[10px] text-amber-300 mt-0.5">51.716° N, 1.966° W</p>
+          </div>
+          <div id="inspRatingBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 whitespace-nowrap">
+            Moderate
+          </div>
+        </div>
+        <div class="mt-1.5 text-[10px] text-slate-300">
+          Fuel Biome: <span id="inspFuelType" class="text-white font-medium">Limestone Heath & Agriculture</span>
+        </div>
+      </div>
+
+      <!-- CFFDRS Parameters 6-Card Grid -->
+      <div>
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-300 block mb-1.5">Canadian FWI System Indices</span>
+        <div class="grid grid-cols-3 gap-1.5 text-center font-mono">
+          <div class="p-2 rounded-xl glass-card">
+            <span class="text-[9px] text-slate-400 block">FWI</span>
+            <span id="inspFWIVal" class="text-base font-bold text-amber-400">18.5</span>
+            <span class="text-[8px] text-slate-400 block">Intensity</span>
+          </div>
+          <div class="p-2 rounded-xl glass-card">
+            <span class="text-[9px] text-slate-400 block">ISI</span>
+            <span id="inspISIVal" class="text-base font-bold text-rose-400">9.2</span>
+            <span class="text-[8px] text-slate-400 block">Spread Rate</span>
+          </div>
+          <div class="p-2 rounded-xl glass-card">
+            <span class="text-[9px] text-slate-400 block">BUI</span>
+            <span id="inspBUIVal" class="text-base font-bold text-amber-300">42</span>
+            <span class="text-[8px] text-slate-400 block">Buildup</span>
+          </div>
+          <div class="p-2 rounded-xl glass-card">
+            <span class="text-[9px] text-slate-400 block">FFMC</span>
+            <span id="inspFFMCVal" class="text-sm font-semibold text-slate-100">84.5</span>
+            <span class="text-[8px] text-slate-400 block">Fine Fuel</span>
+          </div>
+          <div class="p-2 rounded-xl glass-card">
+            <span class="text-[9px] text-slate-400 block">DMC</span>
+            <span id="inspDMCVal" class="text-sm font-semibold text-slate-100">34</span>
+            <span class="text-[8px] text-slate-400 block">Duff Layer</span>
+          </div>
+          <div class="p-2 rounded-xl glass-card">
+            <span class="text-[9px] text-slate-400 block">DC</span>
+            <span id="inspDCVal" class="text-sm font-semibold text-slate-100">260</span>
+            <span class="text-[8px] text-slate-400 block">Peat Deficit</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Meteorological Drivers (Open-Meteo) -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-slate-300">Live Weather Telemetry</span>
+          <span class="text-[9px] text-cyan-300 font-mono">Open-Meteo V1</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 glass-card p-3 rounded-2xl text-[11px] font-mono">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-300 flex items-center gap-1"><i data-lucide="thermometer" class="w-3 h-3 text-rose-400"></i> Temp</span>
+            <span id="inspTemp" class="text-white font-bold">-- °C</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-300 flex items-center gap-1"><i data-lucide="droplets" class="w-3 h-3 text-cyan-400"></i> RH</span>
+            <span id="inspRH" class="text-white font-bold">-- %</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-300 flex items-center gap-1"><i data-lucide="wind" class="w-3 h-3 text-indigo-300"></i> Wind</span>
+            <span id="inspWind" class="text-white font-bold">-- km/h</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-300 flex items-center gap-1"><i data-lucide="cloud-rain" class="w-3 h-3 text-blue-400"></i> Precip</span>
+            <span id="inspRain" class="text-white font-bold">-- mm</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7-Day Sparkline Trend -->
+      <div>
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-300 block mb-1.5">7-Day FWI Risk Forecast</span>
+        <div class="glass-card p-2 rounded-2xl h-28">
+          <canvas id="sparklineCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Local Fire Commentary -->
+      <div class="p-3 rounded-2xl glass-card border-amber-500/30 text-[11px] text-slate-200 leading-relaxed" id="inspVulnerabilityDesc">
+        Fine fuels exhibit moderate desiccation. Surface fires in gorse, moor, and dry grass can spread rapidly with gusty surface winds.
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. LAYERS & SETTINGS SLIDE-UP DRAWER       -->
+  <!-- ========================================== -->
+  <div id="layersDrawer" class="fixed inset-x-0 bottom-0 z-40 glass-panel rounded-t-3xl shadow-2xl transition-transform duration-300 translate-y-full pb-safe flex flex-col max-h-[80vh] border-t border-white/20">
+    <div class="pt-2.5 pb-1 flex justify-center cursor-pointer" id="layersHandle">
+      <div class="w-12 h-1.5 rounded-full bg-slate-400/40"></div>
+    </div>
+    <div class="px-4 py-2 border-b border-white/10 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-100">EFFIS Layers & Overlays</h3>
+      </div>
+      <button id="closeLayersBtn" class="p-1.5 rounded-full hover:bg-slate-800/50 text-slate-300">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar text-xs">
+      <!-- CFFDRS Component Selection -->
+      <div>
+        <label class="block uppercase font-bold text-[10px] tracking-wider text-slate-300 mb-2">Primary Fire Index Layer</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
+            <input type="radio" name="primaryLayer" value="fwi" checked class="accent-amber-500" />
+            <div class="font-semibold text-slate-100 text-xs">FWI (Intensity)</div>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
+            <input type="radio" name="primaryLayer" value="ffmc" class="accent-amber-500" />
+            <div class="font-semibold text-slate-100 text-xs">FFMC (Fine Fuel)</div>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
+            <input type="radio" name="primaryLayer" value="isi" class="accent-amber-500" />
+            <div class="font-semibold text-slate-100 text-xs">ISI (Spread Rate)</div>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl glass-card cursor-pointer active:bg-slate-800/80 transition-colors">
+            <input type="radio" name="primaryLayer" value="dc" class="accent-amber-500" />
+            <div class="font-semibold text-slate-100 text-xs">DC (Peat Deficit)</div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Opacity Slider (Semi-transparent 35% default) -->
+      <div>
+        <div class="flex justify-between text-slate-200 text-xs mb-1.5">
+          <span>EFFIS Overlay Opacity</span>
+          <span id="opacityLabel" class="font-mono text-amber-400 font-bold">35%</span>
+        </div>
+        <input id="opacitySlider" type="range" min="10" max="85" value="35" class="w-full accent-amber-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer" />
+      </div>
+
+      <!-- Auxiliary Toggles -->
+      <div class="space-y-2.5 pt-2 border-t border-white/10">
+        <label class="flex items-center justify-between p-3 rounded-2xl glass-card cursor-pointer">
+          <div class="flex flex-col">
+            <span class="text-slate-100 font-medium">NASA FIRMS Thermal Hotspots</span>
+            <span class="text-[10px] text-slate-400" id="hotspotsLayerStatus">Live / Simulated</span>
+          </div>
+          <input id="toggleHotspots" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded" />
+        </label>
+        <label class="flex items-center justify-between p-3 rounded-2xl glass-card cursor-pointer">
+          <div class="flex flex-col">
+            <span class="text-slate-100 font-medium">Vulnerable Peatland Polygons</span>
+            <span class="text-[10px] text-slate-400">Deep organic peat & Calluna</span>
+          </div>
+          <input id="togglePeatlands" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded" />
+        </label>
+      </div>
+
+      <!-- Quick Jump to UK Moorlands -->
+      <div class="pt-2 border-t border-white/10">
+        <label class="block uppercase font-bold text-[10px] tracking-wider text-slate-300 mb-1.5">UK Moorlands & National Parks</label>
+        <select id="presetSelect" class="w-full p-3 rounded-2xl glass-input text-slate-100 text-xs font-medium focus:outline-none">
+          <option value="" class="bg-slate-900">Choose UK Moorland / Park...</option>
+          <option value="51.716,-1.966" class="bg-slate-900">Cirencester & Cotswolds</option>
+          <option value="51.340,-0.690" class="bg-slate-900">Surrey Heaths & Swinley Forest</option>
+          <option value="53.380,-1.870" class="bg-slate-900">Peak District (Kinder Scout)</option>
+          <option value="50.570,-3.920" class="bg-slate-900">Dartmoor National Park</option>
+          <option value="57.080,-3.680" class="bg-slate-900">Cairngorms National Park</option>
+          <option value="52.950,-3.900" class="bg-slate-900">Eryri (Snowdonia)</option>
+          <option value="54.180,-6.000" class="bg-slate-900">Mourne Mountains (NI)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. IPHONE & SAFARI GESTURE LOCKDOWN
+       ========================================================================= */
+    document.addEventListener('gesturestart', function (e) {
+      if (!e.target.closest('#map')) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('gesturechange', function (e) {
+      if (!e.target.closest('#map')) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('gestureend', function (e) {
+      if (!e.target.closest('#map')) e.preventDefault();
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (e) {
+      const now = Date.now();
+      if (!e.target.closest('#map') && now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+
+    function checkOrientation() {
+      const lockOverlay = document.getElementById('portraitLockScreen');
+      const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 550;
+      if (isLandscape) {
+        lockOverlay.classList.remove('hidden');
+        lockOverlay.classList.add('flex');
+      } else {
+        lockOverlay.classList.add('hidden');
+        lockOverlay.classList.remove('flex');
+      }
+    }
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 150));
+    checkOrientation();
+
+    /* =========================================================================
+       2. API CONFIGURATION & LOCAL STORAGE
+       ========================================================================= */
+    const FIRMS_STORAGE_KEY = 'EFFIS_UK_NASA_FIRMS_KEY';
+    let firmsApiKey = localStorage.getItem(FIRMS_STORAGE_KEY) || '';
+
+    const apiSplashModal = document.getElementById('apiSplashModal');
+    const firmsApiKeyInput = document.getElementById('firmsApiKeyInput');
+    const saveKeyAndLaunchBtn = document.getElementById('saveKeyAndLaunchBtn');
+    const skipKeyBtn = document.getElementById('skipKeyBtn');
+    const openApiSettingsBtn = document.getElementById('openApiSettingsBtn');
+
+    if (firmsApiKey) {
+      firmsApiKeyInput.value = firmsApiKey;
+      document.getElementById('keyStatusBadge').textContent = 'Key Saved';
+    }
+
+    function hideSplash() {
+      apiSplashModal.classList.add('hidden');
+    }
+    function showSplash() {
+      apiSplashModal.classList.remove('hidden');
+    }
+
+    saveKeyAndLaunchBtn.addEventListener('click', () => {
+      const val = firmsApiKeyInput.value.trim();
+      if (val) {
+        firmsApiKey = val;
+        localStorage.setItem(FIRMS_STORAGE_KEY, val);
+        showToast('NASA FIRMS API Key saved');
+      } else {
+        firmsApiKey = '';
+        localStorage.removeItem(FIRMS_STORAGE_KEY);
+        showToast('Running in Demo Mode');
+      }
+      hideSplash();
+      fetchThermalHotspots();
+    });
+
+    skipKeyBtn.addEventListener('click', () => {
+      hideSplash();
+      showToast('Running in Demo Mode (Simulated Hotspots)');
+      fetchThermalHotspots();
+    });
+
+    openApiSettingsBtn.addEventListener('click', () => {
+      showSplash();
+    });
+
+    /* =========================================================================
+       3. CONSTANTS & SIMULATION GRID (UK EXTENT)
+       ========================================================================= */
+    const METERS_PER_MILE = 1609.344;
+    let operationalRadiusMiles = 20;
+    let currentCenterLat = 51.716; // Cirencester default
+    let currentCenterLng = -1.966;
+    let userRadiusCircle = null;
+    let userMarker = null;
+
+    const UK_SITES = [
+      { name: 'Cirencester & Cotswolds', lat: 51.716, lon: -1.966, baseFWI: 18.5, baseFFMC: 84.5, baseISI: 9.2, baseDC: 260, habitat: 'Limestone Heath & Agriculture' },
+      { name: 'Surrey Heaths & Swinley Forest', lat: 51.340, lon: -0.690, baseFWI: 28.5, baseFFMC: 89.2, baseISI: 14.1, baseDC: 340, habitat: 'Lowland Heath & Scots Pine' },
+      { name: 'Peak District (Kinder Scout)', lat: 53.380, lon: -1.870, baseFWI: 24.8, baseFFMC: 86.4, baseISI: 11.2, baseDC: 325, habitat: 'Upland Peat & Heather Moor' },
+      { name: 'Dartmoor National Park', lat: 50.570, lon: -3.920, baseFWI: 22.1, baseFFMC: 84.1, baseISI: 9.8, baseDC: 280, habitat: 'Gorse, Moorland & Bracken' },
+      { name: 'Cairngorms National Park', lat: 57.080, lon: -3.680, baseFWI: 18.0, baseFFMC: 81.2, baseISI: 8.4, baseDC: 240, habitat: 'Caledonian Pine & Montane Heath' },
+      { name: 'Eryri (Snowdonia)', lat: 52.950, lon: -3.900, baseFWI: 17.2, baseFFMC: 79.5, baseISI: 7.9, baseDC: 220, habitat: 'Rugged Uplands & Molinia Grass' },
+      { name: 'Mourne Mountains (NI)', lat: 54.180, lon: -6.000, baseFWI: 15.6, baseFFMC: 78.4, baseISI: 7.1, baseDC: 205, habitat: 'Upland Bog & Heather' }
+    ];
+
+    const UK_GRID = [];
+    (function initGrid() {
+      const latStep = 0.35;
+      const lonStep = 0.45;
+      for (let lat = 50.1; lat <= 58.6; lat += latStep) {
+        for (let lon = -7.5; lon <= 1.7; lon += lonStep) {
+          const inScotland = lat > 54.8 && lat <= 58.6 && lon > -7.0 && lon < -1.4;
+          const inEnglandWales = lat >= 50.0 && lat <= 54.8 && lon > -5.6 && lon < 1.7;
+          const inNorthernIreland = lat >= 54.0 && lat <= 55.4 && lon >= -8.0 && lon <= -5.4;
+
+          if (inScotland || inEnglandWales || inNorthernIreland) {
+            let closest = UK_SITES[0];
+            let minDist = 9999;
+            UK_SITES.forEach(s => {
+              const d = Math.hypot(s.lat - lat, s.lon - lon);
+              if (d < minDist) { minDist = d; closest = s; }
+            });
+            const noise = (Math.sin(lat * 9) + Math.cos(lon * 9)) * 2.5;
+            UK_GRID.push({
+              lat: +(lat.toFixed(3)),
+              lon: +(lon.toFixed(3)),
+              name: closest.name,
+              habitat: closest.habitat,
+              baseFWI: Math.max(3, closest.baseFWI + noise),
+              baseFFMC: Math.min(96, Math.max(68, closest.baseFFMC + noise * 0.7)),
+              baseISI: Math.max(1.5, closest.baseISI + noise * 0.4),
+              baseDC: Math.max(110, closest.baseDC + noise * 8),
+              tempBase: 18 + (58.5 - lat) * 1.05 + (lon * 0.7),
+              rhBase: 45 + (lat - 50) * 2.8,
+              windBase: 18 + (lat > 55 ? 5 : 2)
+            });
+          }
+        }
+      }
+    })();
+
+    const DEMO_HOTSPOTS = [
+      { id: 'HOT-1', lat: 51.32, lon: -0.65, name: 'Chobham Common (Lowland Heath)', frp: '42.5 MW', sat: 'VIIRS_SNPP', conf: 'nominal' },
+      { id: 'HOT-2', lat: 53.48, lon: -1.98, name: 'Saddleworth Moor (Deep Peat)', frp: '68.1 MW', sat: 'VIIRS_NOAA20', conf: 'high' },
+      { id: 'HOT-3', lat: 50.58, lon: -3.88, name: 'Dartmoor North (Gorse/Bracken)', frp: '31.2 MW', sat: 'MODIS_AQUA', conf: 'high' },
+      { id: 'HOT-4', lat: 51.68, lon: -2.05, name: 'Kemble Moorland Edge', frp: '14.8 MW', sat: 'MODIS_TERRA', conf: 'nominal' }
+    ];
+
+    const SENSITIVE_ZONES = [
+      { name: 'Peak District Blanket Bogs', coords: [[53.30, -2.1], [53.55, -2.0], [53.50, -1.6], [53.25, -1.7]] },
+      { name: 'Surrey Lowland Heaths', coords: [[51.20, -0.8], [51.40, -0.75], [51.35, -0.4], [51.15, -0.45]] },
+      { name: 'Dartmoor Upland Peatland', coords: [[50.45, -4.1], [50.75, -4.0], [50.70, -3.7], [50.48, -3.8]] }
+    ];
+
+    /* =========================================================================
+       4. LEAFLET INITIALIZATION (DEFAULT: OPENSTREETMAP)
+       ========================================================================= */
+    const map = L.map('map', {
+      center: [currentCenterLat, currentCenterLng],
+      zoom: 10,
+      zoomControl: false,
+      tap: true,
+      bounceAtZoomLimits: false
+    });
+
+    const basemaps = {
+      osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }),
+      googleSat: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '&copy; Google Satellite'
+      }),
+      cartoDark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd',
+        attribution: '&copy; CARTO'
+      })
+    };
+
+    // SET OSM AS DEFAULT BASEMAP
+    let activeBasemap = basemaps.osm;
+    activeBasemap.addTo(map);
+
+    document.getElementById('basemapSelect').addEventListener('change', (e) => {
+      const choice = e.target.value;
+      if (basemaps[choice]) {
+        map.removeLayer(activeBasemap);
+        activeBasemap = basemaps[choice];
+        activeBasemap.addTo(map);
+        activeBasemap.bringToBack();
+      }
+    });
+
+    const effisLayerGroup = L.layerGroup().addTo(map);
+    const hotspotsLayerGroup = L.layerGroup().addTo(map);
+    const peatlandsLayerGroup = L.layerGroup().addTo(map);
+    const radiusLayerGroup = L.layerGroup().addTo(map);
+
+    /* =========================================================================
+       5. USER LOCATION & 20-MILE RADIUS BUFFER
+       ========================================================================= */
+    function showToast(msg) {
+      const toast = document.getElementById('statusToast');
+      document.getElementById('statusToastMsg').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    function renderOperationalRadius(lat, lng, miles) {
+      radiusLayerGroup.clearLayers();
+      const radiusMeters = miles * METERS_PER_MILE;
+
+      userRadiusCircle = L.circle([lat, lng], {
+        radius: radiusMeters,
+        color: '#f59e0b',
+        weight: 2.2,
+        dashArray: '5, 5',
+        fillColor: '#f59e0b',
+        fillOpacity: 0.05,
+        interactive: false
+      }).addTo(radiusLayerGroup);
+
+      const markerHtml = `
+        <div class="relative flex items-center justify-center w-8 h-8 pointer-events-none">
+          <span class="absolute w-8 h-8 rounded-full bg-amber-400 opacity-50 badge-pulse"></span>
+          <span class="relative w-4 h-4 rounded-full bg-amber-500 border-2 border-slate-950 shadow-lg"></span>
+        </div>
+      `;
+
+      userMarker = L.marker([lat, lng], {
+        icon: L.divIcon({ html: markerHtml, className: 'custom-pin', iconSize: [32, 32], iconAnchor: [16, 16] })
+      }).addTo(radiusLayerGroup);
+
+      map.fitBounds(userRadiusCircle.getBounds(), { padding: [25, 25], maxZoom: 12 });
+      document.getElementById('headerSubtext').textContent = `${miles}-Mile Focus Active`;
+    }
+
+    function locateUserDevice() {
+      showToast('Querying GPS coordinates...');
+      if (!navigator.geolocation) {
+        showToast('Geolocation not supported. Centering on Cotswolds.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          currentCenterLat = pos.coords.latitude;
+          currentCenterLng = pos.coords.longitude;
+          renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
+          showToast(`Centered GPS on ${currentCenterLat.toFixed(2)}°, ${currentCenterLng.toFixed(2)}°`);
+          fetchLiveMeteoAndInspect(currentCenterLat, currentCenterLng, 'My Current Location');
+        },
+        (err) => {
+          console.warn('GPS location denied:', err);
+          showToast('GPS unavailable. Centered on Cirencester (20 mi)');
+          currentCenterLat = 51.716;
+          currentCenterLng = -1.966;
+          renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
+          fetchLiveMeteoAndInspect(currentCenterLat, currentCenterLng, 'Cirencester & Cotswolds');
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+    }
+
+    document.getElementById('locateMeBtn').addEventListener('click', locateUserDevice);
+
+    document.getElementById('radiusSelect').addEventListener('change', (e) => {
+      operationalRadiusMiles = parseFloat(e.target.value);
+      renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
+      document.getElementById('locateBtnLabel').textContent = `Locate Me (${operationalRadiusMiles} mi)`;
+      showToast(`Set buffer to ${operationalRadiusMiles} miles`);
+    });
+
+    document.getElementById('presetSelect').addEventListener('change', (e) => {
+      if (!e.target.value) return;
+      const [latStr, lngStr] = e.target.value.split(',');
+      currentCenterLat = parseFloat(latStr);
+      currentCenterLng = parseFloat(lngStr);
+      const name = e.target.options[e.target.selectedIndex].text;
+      renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
+      fetchLiveMeteoAndInspect(currentCenterLat, currentCenterLng, name);
+      closeAllDrawers();
+      showToast(`Jumped to ${name}`);
+    });
+
+    /* =========================================================================
+       6. NASA FIRMS API (HOTSPOTS)
+       ========================================================================= */
+    async function fetchThermalHotspots() {
+      hotspotsLayerGroup.clearLayers();
+      const statusLabel = document.getElementById('hotspotsLayerStatus');
+
+      if (!firmsApiKey) {
+        statusLabel.textContent = 'Simulated / Demo Mode';
+        renderHotspotArray(DEMO_HOTSPOTS);
+        return;
+      }
+
+      statusLabel.textContent = 'Fetching NASA FIRMS...';
+      showToast('Connecting to NASA FIRMS satellite feed...');
+
+      const ukBBox = '-8.65,49.86,1.77,60.86';
+      const endpoint = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${firmsApiKey}/VIIRS_SNPP_NRT/${ukBBox}/1`;
+
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`FIRMS HTTP ${res.status}`);
+        const text = await res.text();
+
+        const lines = text.trim().split('\n');
+        if (lines.length <= 1) {
+          showToast('No active satellite hotspots detected over UK today.');
+          statusLabel.textContent = '0 Live Hotspots (NASA FIRMS)';
+          return;
+        }
+
+        const liveHotspots = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          if (cols.length >= 8) {
+            const lat = parseFloat(cols[0]);
+            const lon = parseFloat(cols[1]);
+            const bright = cols[2];
+            const acqDate = cols[5];
+            const acqTime = cols[6];
+            const sat = cols[7];
+            const frp = cols[9] ? `${cols[9]} MW` : `${bright} K`;
+
+            liveHotspots.push({
+              id: `FIRMS-${i}`,
+              lat,
+              lon,
+              name: `Satellite Detection (${sat})`,
+              frp,
+              sat: `VIIRS ${acqDate} ${acqTime}Z`,
+              conf: cols[8] || 'nominal'
+            });
+          }
+        }
+
+        if (liveHotspots.length > 0) {
+          renderHotspotArray(liveHotspots);
+          statusLabel.textContent = `${liveHotspots.length} Live Hotspots (NASA FIRMS)`;
+          showToast(`Loaded ${liveHotspots.length} NASA FIRMS thermal hotspots`);
+        } else {
+          statusLabel.textContent = 'Demo Mode (Simulated)';
+          renderHotspotArray(DEMO_HOTSPOTS);
+        }
+      } catch (err) {
+        console.warn('NASA FIRMS API error or CORS restriction:', err);
+        statusLabel.textContent = 'Demo Mode (Fallback)';
+        renderHotspotArray(DEMO_HOTSPOTS);
+        showToast('FIRMS CORS/Key notice: fallback demo hotspots displayed');
+      }
+    }
+
+    function renderHotspotArray(spots) {
+      if (!document.getElementById('toggleHotspots').checked) return;
+
+      spots.forEach(spot => {
+        const marker = L.circleMarker([spot.lat, spot.lon], {
+          radius: 6,
+          fillColor: '#f43f5e',
+          color: '#ffffff',
+          weight: 1.5,
+          fillOpacity: 0.95
+        });
+        marker.bindPopup(`
+          <div class="text-xs p-1">
+            <span class="text-rose-400 font-bold block mb-0.5">THERMAL ANOMALY</span>
+            <div class="text-slate-100 font-semibold">${spot.name}</div>
+            <div class="text-[10px] text-amber-400 font-mono mt-1">FRP: ${spot.frp} | ${spot.sat}</div>
+          </div>
+        `);
+        hotspotsLayerGroup.addLayer(marker);
+      });
+    }
+
+    /* =========================================================================
+       7. OPEN-METEO API & LIVE WEATHER WIDGET UPDATER
+       ========================================================================= */
+    let currentForecastDay = 0;
+    let selectedActiveLayer = 'fwi';
+    let globalOpacity = 0.35; // Default 35% transparent
+    let sparklineChart = null;
+    let isPlayingTimeline = false;
+    let timelineInterval = null;
+
+    function getFWIClass(v) {
+      if (v < 5.2) return { name: 'Very Low', color: '#52b788' };
+      if (v < 11.2) return { name: 'Low', color: '#b7e4c7' };
+      if (v < 21.3) return { name: 'Moderate', color: '#ffea00' };
+      if (v < 38.0) return { name: 'High', color: '#ff9e00' };
+      if (v < 50.0) return { name: 'Very High', color: '#e63946' };
+      return { name: 'Extreme', color: '#7209b7' };
+    }
+    function getFFMCClass(v) {
+      if (v < 74) return { name: 'Very Low', color: '#52b788' };
+      if (v < 82) return { name: 'Low', color: '#b7e4c7' };
+      if (v < 87) return { name: 'Moderate', color: '#ffea00' };
+      if (v < 90) return { name: 'High', color: '#ff9e00' };
+      if (v < 92) return { name: 'Very High', color: '#e63946' };
+      return { name: 'Extreme', color: '#7209b7' };
+    }
+    function getISIClass(v) {
+      if (v < 2) return { name: 'Very Low', color: '#52b788' };
+      if (v < 5) return { name: 'Low', color: '#b7e4c7' };
+      if (v < 9) return { name: 'Moderate', color: '#ffea00' };
+      if (v < 16) return { name: 'High', color: '#ff9e00' };
+      if (v < 24) return { name: 'Very High', color: '#e63946' };
+      return { name: 'Extreme', color: '#7209b7' };
+    }
+    function getDCClass(v) {
+      if (v < 100) return { name: 'Very Low', color: '#52b788' };
+      if (v < 200) return { name: 'Low', color: '#b7e4c7' };
+      if (v < 300) return { name: 'Moderate', color: '#ffea00' };
+      if (v < 400) return { name: 'High', color: '#ff9e00' };
+      if (v < 500) return { name: 'Very High', color: '#e63946' };
+      return { name: 'Extreme', color: '#7209b7' };
+    }
+
+    function computeCFFDRS(temp, rh, windKmH, rainMm) {
+      let ffmc = 85.0 + (temp - 15) * 0.8 - (rh - 50) * 0.25 - (rainMm > 0.5 ? 12 : 0);
+      ffmc = Math.max(50, Math.min(97.5, ffmc));
+
+      const m = 147.2 * (101 - ffmc) / (59.5 + ffmc);
+      let fW = Math.exp(0.05039 * windKmH);
+      let fF = 91.9 * Math.exp(-0.1386 * m) * (1.0 + Math.pow(m, 5.31) / (4.93e7));
+      let isi = 0.208 * fW * fF;
+      isi = Math.max(0.5, Math.min(35, isi));
+
+      let dmc = Math.max(5, Math.round(30 + (temp - 12) * 1.4 - rainMm * 2));
+      let dc = Math.max(80, Math.round(240 + (temp - 10) * 8 - rainMm * 6));
+      let bui = Math.round((0.8 * dmc * dc) / (dmc + 0.4 * dc));
+
+      let fwi;
+      if (bui <= 80) {
+        let b = 0.1 * isi * (0.626 * Math.pow(bui, 0.809) + 2);
+        fwi = b > 1 ? Math.exp(2.72 + 0.434 * Math.log(b)) : b;
+      } else {
+        let b = 0.1 * isi * (1000 / (25 + 108.64 / Math.exp(0.023 * bui)));
+        fwi = b > 1 ? Math.exp(2.72 + 0.434 * Math.log(b)) : b;
+      }
+      fwi = Math.max(1, Math.min(75, fwi));
+
+      return {
+        fwi: +fwi.toFixed(1),
+        ffmc: +ffmc.toFixed(1),
+        isi: +isi.toFixed(1),
+        bui,
+        dmc,
+        dc
+      };
+    }
+
+    function updateFloatingWeatherBadge(temp, rh, wind, rain) {
+      document.getElementById('weatherWidgetTemp').textContent = `${Math.round(temp)}°C`;
+      document.getElementById('weatherWidgetRH').textContent = `${Math.round(rh)}%`;
+      document.getElementById('weatherWidgetWind').textContent = `${Math.round(wind)}`;
+      document.getElementById('weatherWidgetRain').textContent = `${rain.toFixed(1)}`;
+
+      const descEl = document.getElementById('weatherWidgetDesc');
+      const iconEl = document.getElementById('weatherConditionIcon');
+
+      let iconName = 'sun';
+      let descText = 'Fair / Clear';
+
+      if (rain > 0.5) {
+        iconName = 'cloud-rain';
+        descText = 'Rain Showers';
+      } else if (rh > 80) {
+        iconName = 'cloud';
+        descText = 'Overcast / Humid';
+      } else if (wind > 28) {
+        iconName = 'wind';
+        descText = 'Breezy / Dry';
+      } else if (temp > 22) {
+        iconName = 'sun';
+        descText = 'Warm / Elevated Risk';
+      }
+
+      descEl.textContent = descText;
+      iconEl.setAttribute('data-lucide', iconName);
+      lucide.createIcons();
+    }
+
+    async function fetchLiveMeteoAndInspect(lat, lon, customName) {
+      showToast('Querying live Open-Meteo weather telemetry...');
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&daily=temperature_2m_max,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max&timezone=Europe/London`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
+        const data = await res.json();
+
+        const current = data.current;
+        const daily = data.daily;
+
+        const temp = current.temperature_2m;
+        const rh = current.relative_humidity_2m;
+        const wind = current.wind_speed_10m;
+        const rain = current.precipitation;
+
+        // Update floating live weather widget
+        updateFloatingWeatherBadge(temp, rh, wind, rain);
+
+        const indices = computeCFFDRS(temp, rh, wind, rain);
+
+        const dailyFWIs = [];
+        for (let d = 0; d < 7; d++) {
+          const dTemp = daily.temperature_2m_max[d] || temp;
+          const dRh = daily.relative_humidity_2m_mean[d] || rh;
+          const dWind = daily.wind_speed_10m_max[d] || wind;
+          const dRain = daily.precipitation_sum[d] || rain;
+          const dIndices = computeCFFDRS(dTemp, dRh, dWind, dRain);
+          dailyFWIs.push(dIndices.fwi);
+        }
+
+        const pointData = {
+          name: customName || `Inspected Zone (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`,
+          lat,
+          lon,
+          habitat: 'Upland Peat, Gorse & Calluna Moor',
+          temp,
+          rh,
+          wind,
+          rain,
+          ...indices,
+          forecastFWI: dailyFWIs
+        };
+
+        displayPointInspector(pointData);
+        showToast('Live weather telemetry updated');
+      } catch (err) {
+        console.warn('Open-Meteo API query fallback:', err);
+        showToast('Using local CFFDRS simulation model');
+        inspectLocalGrid(lat, lon, customName);
+      }
+    }
+
+    function computeCellState(cell, day) {
+      const dailyFactors = [1.0, 1.15, 1.28, 1.22, 1.05, 0.80, 0.88];
+      const factor = dailyFactors[day] || 1.0;
+      const fwi = +(cell.baseFWI * factor).toFixed(1);
+      const ffmc = +Math.min(97, cell.baseFFMC * (0.92 + factor * 0.08)).toFixed(1);
+      const isi = +(cell.baseISI * factor).toFixed(1);
+      const dc = +Math.round(cell.baseDC + day * 10);
+      const dmc = +Math.round(34 * factor);
+      const bui = +Math.round(42 * factor);
+      const temp = +(cell.tempBase + (day === 2 ? 4.0 : day * 0.7)).toFixed(1);
+      const rh = +Math.max(25, Math.round(cell.rhBase - (factor - 1) * 16));
+      const wind = +Math.round(cell.windBase + (day % 2 === 0 ? 3 : -2));
+      const rain = day === 5 ? 3.5 : 0.0;
+      return { fwi, ffmc, isi, dc, dmc, bui, temp, rh, wind, rain };
+    }
+
+    function renderEFFISOverlay() {
+      effisLayerGroup.clearLayers();
+      const halfLat = 0.175;
+      const halfLon = 0.225;
+
+      UK_GRID.forEach(cell => {
+        const state = computeCellState(cell, currentForecastDay);
+        let classInfo;
+        if (selectedActiveLayer === 'fwi') classInfo = getFWIClass(state.fwi);
+        else if (selectedActiveLayer === 'ffmc') classInfo = getFFMCClass(state.ffmc);
+        else if (selectedActiveLayer === 'isi') classInfo = getISIClass(state.isi);
+        else if (selectedActiveLayer === 'dc') classInfo = getDCClass(state.dc);
+
+        const bounds = [
+          [cell.lat - halfLat, cell.lon - halfLon],
+          [cell.lat + halfLat, cell.lon + halfLon]
+        ];
+
+        const rect = L.rectangle(bounds, {
+          color: classInfo.color,
+          weight: 0.5,
+          fillColor: classInfo.color,
+          fillOpacity: globalOpacity,
+          interactive: true
+        });
+
+        rect.on('click', () => {
+          fetchLiveMeteoAndInspect(cell.lat, cell.lon, cell.name);
+        });
+
+        effisLayerGroup.addLayer(rect);
+      });
+    }
+
+    function renderSensitiveAreas() {
+      peatlandsLayerGroup.clearLayers();
+      if (!document.getElementById('togglePeatlands').checked) return;
+
+      SENSITIVE_ZONES.forEach(zone => {
+        const poly = L.polygon(zone.coords, {
+          color: '#c084fc',
+          dashArray: '3, 4',
+          fillColor: '#a855f7',
+          fillOpacity: 0.10,
+          weight: 1.2
+        });
+        poly.bindTooltip(zone.name, { sticky: true });
+        peatlandsLayerGroup.addLayer(poly);
+      });
+    }
+
+    /* =========================================================================
+       8. POINT INSPECTOR & CHART.JS
+       ========================================================================= */
+    const inspectorDrawer = document.getElementById('inspectorDrawer');
+
+    function openInspector() {
+      inspectorDrawer.classList.remove('translate-y-full');
+      layersDrawer.classList.add('translate-y-full');
+    }
+
+    function closeAllDrawers() {
+      inspectorDrawer.classList.add('translate-y-full');
+      layersDrawer.classList.add('translate-y-full');
+    }
+
+    function displayPointInspector(data) {
+      document.getElementById('inspLocationName').textContent = data.name;
+      document.getElementById('inspCoords').textContent = `${data.lat.toFixed(3)}° N, ${Math.abs(data.lon).toFixed(3)}° ${data.lon < 0 ? 'W' : 'E'}`;
+      document.getElementById('inspFuelType').textContent = data.habitat;
+
+      const classInfo = getFWIClass(data.fwi);
+      const badge = document.getElementById('inspRatingBadge');
+      badge.textContent = classInfo.name;
+      badge.style.backgroundColor = classInfo.color + '25';
+      badge.style.color = classInfo.color;
+      badge.style.borderColor = classInfo.color + '60';
+
+      document.getElementById('inspFWIVal').textContent = data.fwi;
+      document.getElementById('inspISIVal').textContent = data.isi;
+      document.getElementById('inspBUIVal').textContent = data.bui;
+      document.getElementById('inspFFMCVal').textContent = data.ffmc;
+      document.getElementById('inspDMCVal').textContent = data.dmc;
+      document.getElementById('inspDCVal').textContent = data.dc;
+
+      document.getElementById('inspTemp').textContent = `${data.temp} °C`;
+      document.getElementById('inspRH').textContent = `${data.rh} %`;
+      document.getElementById('inspWind').textContent = `${data.wind} km/h`;
+      document.getElementById('inspRain').textContent = `${data.rain.toFixed(1)} mm`;
+
+      renderSparkline(data.forecastFWI);
+      openInspector();
+    }
+
+    function inspectLocalGrid(lat, lon, name) {
+      let closest = UK_GRID[0];
+      let minDist = 9999;
+      UK_GRID.forEach(cell => {
+        const d = Math.hypot(cell.lat - lat, cell.lon - lon);
+        if (d < minDist) { minDist = d; closest = cell; }
+      });
+      const state = computeCellState(closest, currentForecastDay);
+      const dailyFWIs = [0,1,2,3,4,5,6].map(d => computeCellState(closest, d).fwi);
+      displayPointInspector({
+        name: name || closest.name,
+        lat,
+        lon,
+        habitat: closest.habitat,
+        ...state,
+        forecastFWI: dailyFWIs
+      });
+      updateFloatingWeatherBadge(state.temp, state.rh, state.wind, state.rain);
+    }
+
+    function renderSparkline(fwiArray) {
+      const days = ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6'];
+      const ctx = document.getElementById('sparklineCanvas').getContext('2d');
+      if (sparklineChart) sparklineChart.destroy();
+
+      sparklineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [{
+            data: fwiArray,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.18)',
+            borderWidth: 2,
+            tension: 0.35,
+            fill: true,
+            pointBackgroundColor: days.map((_, i) => i === currentForecastDay ? '#ffffff' : '#f59e0b'),
+            pointRadius: days.map((_, i) => i === currentForecastDay ? 4.5 : 2)
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#cbd5e1', font: { size: 9 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#cbd5e1', font: { size: 9 } }, suggestedMin: 0 }
+          }
+        }
+      });
+    }
+
+    map.on('click', (e) => {
+      fetchLiveMeteoAndInspect(e.latlng.lat, e.latlng.lng, null);
+    });
+
+    document.getElementById('floatingWeatherWidget').addEventListener('click', () => {
+      fetchLiveMeteoAndInspect(currentCenterLat, currentCenterLng, 'Current Area Focus');
+    });
+
+    /* =========================================================================
+       9. TIMELINE SCROLLER & BOTTOM SHEETS
+       ========================================================================= */
+    const timelineRange = document.getElementById('timelineRange');
+    const forecastDayBadge = document.getElementById('forecastDayBadge');
+    const playTimelineBtn = document.getElementById('playTimelineBtn');
+
+    function updateDay(day) {
+      currentForecastDay = parseInt(day);
+      timelineRange.value = currentForecastDay;
+      forecastDayBadge.textContent = currentForecastDay === 0 ? 'D+0 (Today)' : `D+${currentForecastDay} (Forecast)`;
+      renderEFFISOverlay();
+    }
+
+    timelineRange.addEventListener('input', (e) => updateDay(e.target.value));
+
+    playTimelineBtn.addEventListener('click', () => {
+      isPlayingTimeline = !isPlayingTimeline;
+      if (isPlayingTimeline) {
+        playTimelineBtn.innerHTML = '<i data-lucide="pause" class="w-3.5 h-3.5 fill-current"></i>';
+        lucide.createIcons();
+        timelineInterval = setInterval(() => {
+          const next = (currentForecastDay + 1) % 7;
+          updateDay(next);
+        }, 1800);
+      } else {
+        playTimelineBtn.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>';
+        lucide.createIcons();
+        clearInterval(timelineInterval);
+      }
+    });
+
+    const layersDrawer = document.getElementById('layersDrawer');
+    document.getElementById('openLayersBtn').addEventListener('click', () => {
+      layersDrawer.classList.remove('translate-y-full');
+      inspectorDrawer.classList.add('translate-y-full');
+    });
+    document.getElementById('closeLayersBtn').addEventListener('click', () => layersDrawer.classList.add('translate-y-full'));
+    document.getElementById('layersHandle').addEventListener('click', () => layersDrawer.classList.add('translate-y-full'));
+
+    document.getElementById('toggleInspectorBtn').addEventListener('click', () => {
+      if (inspectorDrawer.classList.contains('translate-y-full')) {
+        openInspector();
+      } else {
+        inspectorDrawer.classList.add('translate-y-full');
+      }
+    });
+    document.getElementById('closeInspectorBtn').addEventListener('click', () => inspectorDrawer.classList.add('translate-y-full'));
+    document.getElementById('inspectorHandle').addEventListener('click', () => inspectorDrawer.classList.add('translate-y-full'));
+
+    document.querySelectorAll('input[name="primaryLayer"]').forEach(r => {
+      r.addEventListener('change', (e) => {
+        selectedActiveLayer = e.target.value;
+        document.getElementById('legendMetricCode').textContent = `${selectedActiveLayer.toUpperCase()} (${Math.round(globalOpacity * 100)}%)`;
+        renderEFFISOverlay();
+      });
+    });
+
+    document.getElementById('opacitySlider').addEventListener('input', (e) => {
+      globalOpacity = e.target.value / 100;
+      document.getElementById('opacityLabel').textContent = `${e.target.value}%`;
+      document.getElementById('legendMetricCode').textContent = `${selectedActiveLayer.toUpperCase()} (${e.target.value}%)`;
+      renderEFFISOverlay();
+    });
+
+    document.getElementById('toggleHotspots').addEventListener('change', () => fetchThermalHotspots());
+    document.getElementById('togglePeatlands').addEventListener('change', renderSensitiveAreas);
+
+    /* =========================================================================
+       10. APPLICATION INITIALIZATION
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderEFFISOverlay();
+      renderSensitiveAreas();
+      renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
+
+      // If a saved API key exists, dismiss splash immediately
+      if (firmsApiKey) {
+        hideSplash();
+        fetchThermalHotspots();
+      } else {
+        showSplash();
+      }
+
+      // Initial live telemetry query for Cirencester default center
+      fetchLiveMeteoAndInspect(currentCenterLat, currentCenterLng, 'Cirencester & Cotswolds');
+    });
+  </script>
+</body>
+</html>
