@@ -72,7 +72,7 @@
     }
 
     .glass-panel {
-      background: rgba(15, 23, 42, 0.78);
+      background: rgba(15, 23, 42, 0.82);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.14);
@@ -91,13 +91,6 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.16);
-    }
-
-    .glass-pill {
-      background: rgba(15, 23, 42, 0.78);
-      backdrop-filter: blur(18px) saturate(160%);
-      -webkit-backdrop-filter: blur(18px) saturate(160%);
-      border: 1px solid rgba(255, 255, 255, 0.18);
     }
 
     .glass-btn-accent {
@@ -187,7 +180,7 @@
       <div class="p-3.5 glass-card rounded-2xl text-xs space-y-2 text-slate-300">
         <div class="flex items-start gap-2">
           <i data-lucide="cloud-sun" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
-          <span><strong>Open-Meteo Hourly API:</strong> Samples strictly at 12:00 UTC daily (temperature, RH, 10m wind, and 24h precipitation) conforming to CFFDRS observation standards.</span>
+          <span><strong>Open-Meteo Hourly API:</strong> Samples at 12:00 UTC daily (temperature, RH, 10m wind, 24h precipitation) conforming to standard CFFDRS protocols.</span>
         </div>
         <div class="flex items-start gap-2">
           <i data-lucide="satellite" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
@@ -226,7 +219,7 @@
     </div>
   </div>
 
-  <!-- CRISP TOP APP HEADER (ZERO BLUR) -->
+  <!-- CRISP TOP APP HEADER -->
   <header class="pt-safe solid-header z-30 shrink-0 select-none">
     <div class="h-14 px-3.5 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5">
@@ -253,7 +246,7 @@
           <i data-lucide="key" class="w-4 h-4"></i>
         </button>
 
-        <button id="openV2Tools" type="button" title="Data & Operations Drawer" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl bg-slate-900 border border-white/10 text-cyan-400 hover:text-white active:scale-95 transition-all cursor-pointer">
+        <button id="openV2Tools" type="button" title="Operations Drawer" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl bg-slate-900 border border-white/10 text-cyan-400 hover:text-white active:scale-95 transition-all cursor-pointer">
           <i data-lucide="crosshair" class="w-4 h-4"></i>
         </button>
 
@@ -264,73 +257,32 @@
     </div>
   </header>
 
-  <!-- MAIN MAP CANVAS & OVERLAYS -->
+  <!-- MAIN MAP CANVAS -->
   <main class="relative flex-1 w-full h-full overflow-hidden">
     <div id="map" class="w-full h-full z-10"></div>
 
-    <!-- Floating Top-Left Controls -->
-    <div class="absolute top-3 left-3 z-20 flex flex-col gap-2 pointer-events-auto">
-      <button id="locateMeBtn" type="button" class="h-10 px-3.5 rounded-full glass-btn-accent active:scale-95 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer">
+    <!-- Floating Minimal Action Button (Top Left) -->
+    <div class="absolute top-3 left-3 z-20 flex items-center gap-2 pointer-events-auto">
+      <!-- Minimal Simple Icon Button -->
+      <button id="locateMeBtn" type="button" title="Locate GPS Position" class="h-10 w-10 rounded-2xl glass-panel hover:bg-slate-800/80 active:scale-95 border border-white/15 text-amber-400 flex items-center justify-center transition-all shadow-xl cursor-pointer">
         <i data-lucide="crosshair" class="w-4 h-4 stroke-[2.5]"></i>
-        <span id="locateBtnLabel">Locate Me (20 mi)</span>
       </button>
 
-      <div class="h-9 px-3 rounded-full glass-pill text-slate-200 flex items-center gap-1.5 shadow-lg">
+      <!-- Compact Radius Dropdown -->
+      <div class="h-10 px-2.5 rounded-2xl glass-panel text-slate-200 flex items-center gap-1 shadow-xl border border-white/15">
         <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400"></i>
         <select id="radiusSelect" class="bg-transparent text-xs font-mono text-amber-300 font-semibold focus:outline-none cursor-pointer appearance-none pr-3">
-          <option value="5" class="bg-slate-900 text-slate-100">5 mi (8km)</option>
-          <option value="10" class="bg-slate-900 text-slate-100">10 mi (16km)</option>
-          <option value="20" selected class="bg-slate-900 text-slate-100">20 mi (32km)</option>
-          <option value="50" class="bg-slate-900 text-slate-100">50 mi (80km)</option>
+          <option value="5" class="bg-slate-900 text-slate-100">5 mi</option>
+          <option value="10" class="bg-slate-900 text-slate-100">10 mi</option>
+          <option value="20" selected class="bg-slate-900 text-slate-100">20 mi</option>
+          <option value="50" class="bg-slate-900 text-slate-100">50 mi</option>
         </select>
         <i data-lucide="chevron-down" class="w-2.5 h-2.5 text-slate-400 -ml-2 pointer-events-none"></i>
       </div>
     </div>
 
-    <!-- Floating Geocoding Search Widget -->
-    <div class="v2-search absolute top-14 left-3 z-20 pointer-events-auto max-w-xs w-full">
-      <div class="flex items-center glass-panel rounded-2xl p-1.5 shadow-xl border border-white/10">
-        <input 
-          id="placeSearchInput" 
-          type="text" 
-          placeholder="Search UK place or postcode..." 
-          class="w-full bg-transparent px-2.5 py-1 text-xs text-white placeholder-slate-400 focus:outline-none"
-        />
-        <button id="placeSearchBtn" type="button" class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-semibold">
-          Find
-        </button>
-      </div>
-      <div id="searchResults" class="hidden mt-1 glass-panel rounded-2xl p-1 shadow-2xl max-h-40 overflow-y-auto custom-scrollbar"></div>
-    </div>
-
-    <!-- Floating Live Weather Widget (Top Right) -->
-    <div id="floatingWeatherWidget" class="absolute top-3 right-3 z-20 glass-panel rounded-2xl p-2.5 shadow-xl pointer-events-auto min-w-[155px] transition-all cursor-pointer hover:border-white/30" title="Click to inspect live weather">
-      <div class="flex items-center justify-between gap-1 mb-1 pb-1 border-b border-white/10">
-        <div class="flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-cyan-400 badge-pulse"></span>
-          <span class="text-[9px] font-bold uppercase tracking-wider text-cyan-300">Live Weather</span>
-        </div>
-        <span class="text-[8px] font-mono text-slate-300" id="weatherSourceTag">12:00 UTC</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <i id="weatherConditionIcon" data-lucide="sun" class="w-5 h-5 text-amber-400 shrink-0"></i>
-          <div>
-            <div id="weatherWidgetTemp" class="text-base font-bold font-mono text-white leading-none">--°C</div>
-            <div id="weatherWidgetDesc" class="text-[9px] text-slate-300 font-medium">Fetching...</div>
-          </div>
-        </div>
-        <div class="text-right font-mono text-[9px] leading-tight text-slate-300 border-l border-white/10 pl-2">
-          <div><span class="text-cyan-300 font-semibold" id="weatherWidgetRH">--%</span> <span class="text-[8px] text-slate-400">RH</span></div>
-          <div><span class="text-amber-300 font-semibold" id="weatherWidgetWind">--</span> <span class="text-[8px] text-slate-400">km/h</span></div>
-          <div><span class="text-blue-300 font-semibold" id="weatherWidgetRain">--</span> <span class="text-[8px] text-slate-400">mm</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Floating Compact EFFIS / UKMO Legend -->
-    <div class="absolute top-[88px] right-3 z-20 glass-panel rounded-2xl p-2.5 shadow-xl pointer-events-auto max-w-[145px]">
+    <!-- Floating Compact EFFIS / UKMO Legend (Top Right) -->
+    <div class="absolute top-3 right-3 z-20 glass-panel rounded-2xl p-2.5 shadow-xl pointer-events-auto max-w-[145px]">
       <div class="text-[9px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center justify-between">
         <span id="legendMetricCode">FWI (35%)</span>
         <span class="text-[8px] text-amber-400 font-mono font-bold">EFFIS / FSI</span>
@@ -369,41 +321,84 @@
       <span id="statusToastMsg">Updating...</span>
     </div>
 
-    <!-- Bottom Timeline Scrubber -->
-    <div class="absolute bottom-2 left-2 right-2 z-20 glass-panel rounded-3xl p-3 shadow-2xl">
-      <div class="flex items-center justify-between text-xs mb-2">
-        <div class="flex items-center gap-2">
-          <button id="playTimelineBtn" type="button" class="w-7 h-7 rounded-xl glass-btn-accent active:scale-95 text-slate-950 flex items-center justify-center font-bold transition-transform cursor-pointer">
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
-          </button>
-          <span id="forecastDayBadge" class="font-mono text-amber-300 font-bold bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/40 text-[10px]">
-            D+0 (Today)
-          </span>
+    <!-- BOTTOM FIXED INTERACTIVE DECK: TIMELINE & WEATHER DOCK -->
+    <div class="absolute bottom-2 left-2 right-2 z-20 flex flex-col gap-1.5 pointer-events-auto">
+      
+      <!-- Weather Strip Along Bottom (Above Scrubber) -->
+      <div id="floatingWeatherWidget" class="glass-panel rounded-2xl px-3.5 py-2 shadow-2xl cursor-pointer hover:border-white/30 transition-all" title="Click to inspect location telemetry">
+        <div class="flex items-center justify-between gap-2">
+          
+          <div class="flex items-center gap-2.5 shrink-0">
+            <i id="weatherConditionIcon" data-lucide="sun" class="w-5 h-5 text-amber-400 shrink-0"></i>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span id="weatherWidgetTemp" class="text-sm font-bold font-mono text-white leading-none">--°C</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 badge-pulse"></span>
+              </div>
+              <div id="weatherWidgetDesc" class="text-[9px] text-slate-300 font-medium leading-none mt-0.5">Fetching...</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 font-mono text-[10px] text-slate-300">
+            <div>
+              <span class="text-cyan-300 font-bold" id="weatherWidgetRH">--%</span>
+              <span class="text-[8px] text-slate-400">RH</span>
+            </div>
+            <div>
+              <span class="text-amber-300 font-bold" id="weatherWidgetWind">--</span>
+              <span class="text-[8px] text-slate-400">km/h</span>
+            </div>
+            <div>
+              <span class="text-blue-300 font-bold" id="weatherWidgetRain">--</span>
+              <span class="text-[8px] text-slate-400">mm</span>
+            </div>
+          </div>
+
+          <div class="border-l border-white/10 pl-2 text-right shrink-0">
+            <span class="text-[9px] font-mono text-cyan-300 uppercase block font-semibold leading-none">12:00 UTC</span>
+            <span class="text-[8px] text-slate-400 leading-none">CFFDRS</span>
+          </div>
+
         </div>
-        <button id="toggleInspectorBtn" type="button" class="text-[11px] text-amber-300 font-semibold flex items-center gap-1 active:text-amber-200 transition-colors cursor-pointer">
-          <span>Point Inspector</span>
-          <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
-        </button>
       </div>
 
-      <input 
-        id="timelineRange" 
-        type="range" 
-        min="0" 
-        max="6" 
-        value="0" 
-        step="1" 
-        class="w-full accent-amber-500 cursor-pointer h-2 bg-slate-800/80 rounded-lg appearance-none"
-      />
-      <div class="flex justify-between text-[8px] font-mono text-slate-300 mt-1 px-1">
-        <span>Today</span>
-        <span>D+1</span>
-        <span>D+2</span>
-        <span>D+3</span>
-        <span>D+4</span>
-        <span>D+5</span>
-        <span>D+6</span>
+      <!-- Scrubber Deck -->
+      <div class="glass-panel rounded-3xl p-3 shadow-2xl">
+        <div class="flex items-center justify-between text-xs mb-2">
+          <div class="flex items-center gap-2">
+            <button id="playTimelineBtn" type="button" class="w-7 h-7 rounded-xl glass-btn-accent active:scale-95 text-slate-950 flex items-center justify-center font-bold transition-transform cursor-pointer">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            </button>
+            <span id="forecastDayBadge" class="font-mono text-amber-300 font-bold bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/40 text-[10px]">
+              D+0 (Today)
+            </span>
+          </div>
+          <button id="toggleInspectorBtn" type="button" class="text-[11px] text-amber-300 font-semibold flex items-center gap-1 active:text-amber-200 transition-colors cursor-pointer">
+            <span>Point Inspector</span>
+            <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <input 
+          id="timelineRange" 
+          type="range" 
+          min="0" 
+          max="6" 
+          value="0" 
+          step="1" 
+          class="w-full accent-amber-500 cursor-pointer h-2 bg-slate-800/80 rounded-lg appearance-none"
+        />
+        <div class="flex justify-between text-[8px] font-mono text-slate-300 mt-1 px-1">
+          <span>Today</span>
+          <span>D+1</span>
+          <span>D+2</span>
+          <span>D+3</span>
+          <span>D+4</span>
+          <span>D+5</span>
+          <span>D+6</span>
+        </div>
       </div>
+
     </div>
   </main>
 
@@ -570,7 +565,7 @@
         </div>
       </div>
 
-      <!-- Incident Simulator (Elliptical Rothermel / FBP Adaptation) -->
+      <!-- Incident Simulator -->
       <div class="glass-card rounded-2xl p-3 space-y-2.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
@@ -900,7 +895,7 @@
     const v2WindLayer = L.layerGroup().addTo(map);
     const v2FireLayer = L.layerGroup().addTo(map);
 
-    /* 5. CFFDRS / EFFIS & UKMO VALIDATED FORMULATION */
+    /* 5. CFFDRS / EFFIS & UKMO FORMULATION */
     function getFWIClass(v) {
       if (v < 5.2) return { name: 'Very Low', fsi: 'FSI 1', color: '#52b788', crow: false };
       if (v < 11.2) return { name: 'Low', fsi: 'FSI 1-2', color: '#b7e4c7', crow: false };
@@ -997,7 +992,7 @@
       };
     }
 
-    /* 6. HOURLY WEATHER EXTRACTOR (STRICT 12:00 UTC CFFDRS SAMPLING) */
+    /* 6. HOURLY WEATHER SAMPLING AT 12:00 UTC */
     const V2_SITE_FORECASTS = {};
     let v2ForecastDates = [];
     let currentForecastDay = 0;
@@ -1094,7 +1089,6 @@
     function getSiteState(cell, day) {
       const forecast = V2_SITE_FORECASTS[cell.name];
       if (forecast?.daily?.[day]) return forecast.daily[day];
-      // Synthetic fallback
       const factor = [1.0, 1.15, 1.25, 1.18, 1.05, 0.85, 0.90][day] || 1.0;
       return {
         fwi: +(18.5 * factor).toFixed(1),
@@ -1112,7 +1106,7 @@
       };
     }
 
-    /* 7. MAP OVERLAYS: EFFIS GRID, VULNERABLE PEAT, & WIND VECTORS */
+    /* 7. MAP OVERLAYS */
     function renderEFFISOverlay() {
       effisLayerGroup.clearLayers();
       const halfLat = 0.175;
@@ -1191,7 +1185,7 @@
       });
     }
 
-    /* 8. NASA FIRMS HOTSPOT TELEMETRY (PARSED VIA HEADERS) */
+    /* 8. NASA FIRMS HOTSPOT TELEMETRY */
     async function fetchThermalHotspots() {
       hotspotsLayerGroup.clearLayers();
       const statusLabel = document.getElementById('hotspotsLayerStatus');
@@ -1273,7 +1267,7 @@
       });
     }
 
-    /* 9. ELLIPTICAL ROTHERMEL / FBP SPREAD SIMULATOR */
+    /* 9. ELLIPTICAL SPREAD SIMULATOR */
     const FUEL_PROPERTIES = {
       grass: { name: 'Grass / Stubble', spreadRate: 1.25, spotRisk: 'Low' },
       heath: { name: 'Heather / Gorse', spreadRate: 1.35, spotRisk: 'High' },
@@ -1326,19 +1320,17 @@
       const s = currentIncidentState;
       const fuel = FUEL_PROPERTIES[s.fuel];
 
-      // Standard FBP Elliptical Length-to-Width Ratio (L/W)
       const lwRatio = 1.0 + 0.1259 * Math.pow(Math.max(1, s.wind), 0.785);
       const slopeMultiplier = 1.0 + Math.pow(Math.tan(s.slope * Math.PI / 180), 2) * 5.275;
       const forwardSpreadRate = Math.max(0.04, (0.012 * s.isi + 0.005 * s.fwi) * fuel.spreadRate * slopeMultiplier);
 
-      const elapsedHours = (s.step * 10) / 60; // 10 min steps
-      const a = (forwardSpreadRate * elapsedHours * 1000) / 2; // Semi-major axis in meters
-      const b = a / lwRatio; // Semi-minor axis in meters
+      const elapsedHours = (s.step * 10) / 60;
+      const a = (forwardSpreadRate * elapsedHours * 1000) / 2;
+      const b = a / lwRatio;
 
       const windRad = (s.windDir * Math.PI) / 180;
       const cosLat = Math.max(0.35, Math.cos(s.lat * Math.PI / 180));
 
-      // Construct 16-point elliptical polygon
       const points = [];
       const cLat = s.lat + (Math.cos(windRad) * (a * 0.75)) / 111000;
       const cLon = s.lon + (Math.sin(windRad) * (a * 0.75)) / (111000 * cosLat);
@@ -1348,7 +1340,6 @@
         const x = a * Math.cos(theta);
         const y = b * Math.sin(theta);
 
-        // Rotate along wind vector
         const xRot = x * Math.cos(windRad) - y * Math.sin(windRad);
         const yRot = x * Math.sin(windRad) + y * Math.cos(windRad);
 
@@ -1366,7 +1357,7 @@
       v2FireLayer.addLayer(perimeterPoly);
 
       s.step++;
-      if (s.step >= 36) clearInterval(incidentSimulationTimer); // Max 6 hours
+      if (s.step >= 36) clearInterval(incidentSimulationTimer);
     }
 
     function clearEllipticalIncident() {
@@ -1377,7 +1368,7 @@
       showToast('Incident simulation cleared');
     }
 
-    /* 10. POINT INSPECTOR, UTILITIES & SEARCH */
+    /* 10. POINT INSPECTOR & POSITIONING */
     function showToast(msg) {
       const toast = document.getElementById('statusToast');
       document.getElementById('statusToastMsg').textContent = msg;
@@ -1439,11 +1430,34 @@
       document.getElementById('v2FWIChange').textContent = `${delta >= 0 ? '+' : ''}${delta} vs D-${Math.max(0, currentForecastDay - 1)}`;
     }
 
-    function updateFloatingWeather(temp, rh, wind, rain) {
+    function updateBottomWeatherDock(temp, rh, wind, rain) {
       document.getElementById('weatherWidgetTemp').textContent = `${Math.round(temp)}°C`;
       document.getElementById('weatherWidgetRH').textContent = `${Math.round(rh)}%`;
       document.getElementById('weatherWidgetWind').textContent = `${Math.round(wind)}`;
       document.getElementById('weatherWidgetRain').textContent = `${rain.toFixed(1)}`;
+      
+      const descEl = document.getElementById('weatherWidgetDesc');
+      const iconEl = document.getElementById('weatherConditionIcon');
+
+      let iconName = 'sun';
+      let descText = 'Fair / Clear';
+
+      if (rain > 0.5) {
+        iconName = 'cloud-rain';
+        descText = 'Rain Showers';
+      } else if (rh > 80) {
+        iconName = 'cloud';
+        descText = 'Humid / Overcast';
+      } else if (wind > 28) {
+        iconName = 'wind';
+        descText = 'Breezy / Dry';
+      } else if (temp > 22) {
+        iconName = 'sun';
+        descText = 'Warm / Elevated Risk';
+      }
+
+      descEl.textContent = descText;
+      iconEl.setAttribute('data-lucide', iconName);
       lucide.createIcons();
     }
 
@@ -1480,7 +1494,7 @@
 
       const forecastArray = [0, 1, 2, 3, 4, 5, 6].map(d => getSiteState({ name: site.name }, d).fwi);
       renderSparkline(forecastArray);
-      updateFloatingWeather(state.temp, state.rh, state.wind, state.rain);
+      updateBottomWeatherDock(state.temp, state.rh, state.wind, state.rain);
 
       document.getElementById('inspectorDrawer').classList.remove('translate-y-full');
       document.getElementById('layersDrawer').classList.add('translate-y-full');
@@ -1533,47 +1547,8 @@
       renderEFFISOverlay();
       renderWindArrows();
       updateDashboard(currentCenterLat, currentCenterLng);
-    }
-
-    /* 11. GEOCODING & EXPORT UTILITIES */
-    async function searchUKPlace(query) {
-      if (!query.trim()) return;
-      const box = document.getElementById('searchResults');
-      box.classList.remove('hidden');
-      box.innerHTML = '<div class="p-2.5 text-[10px] text-slate-400">Searching UK gazetteer...</div>';
-
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=gb&q=${encodeURIComponent(query)}`;
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (!res.ok) throw new Error('Search failed');
-        const results = await res.json();
-
-        if (!results.length) {
-          box.innerHTML = '<div class="p-2.5 text-[10px] text-amber-300">No UK matches found.</div>';
-          return;
-        }
-
-        box.innerHTML = results.map((r, i) => `
-          <button type="button" data-idx="${i}" class="search-result-btn w-full text-left p-2 rounded-xl hover:bg-white/10 text-[10px] text-slate-200 truncate block">
-            ${r.display_name}
-          </button>
-        `).join('');
-
-        box.querySelectorAll('.search-result-btn').forEach(btn => {
-          btn.onclick = () => {
-            const item = results[parseInt(btn.dataset.idx)];
-            const lat = parseFloat(item.lat);
-            const lon = parseFloat(item.lon);
-            currentCenterLat = lat; currentCenterLng = lon;
-            renderOperationalRadius(lat, lon, operationalRadiusMiles);
-            updateDashboard(lat, lon);
-            inspectZone(lat, lon, item.display_name.split(',')[0]);
-            box.classList.add('hidden');
-          };
-        });
-      } catch (err) {
-        box.innerHTML = '<div class="p-2.5 text-[10px] text-rose-300">Search error. Try entering lat,lon coordinates.</div>';
-      }
+      const state = getSiteState({ name: findNearestSite(currentCenterLat, currentCenterLng).name }, currentForecastDay);
+      updateBottomWeatherDock(state.temp, state.rh, state.wind, state.rain);
     }
 
     function triggerExport(filename, content, mime) {
@@ -1609,19 +1584,17 @@
       });
     }
 
-    /* 12. CONSOLIDATED INITIALIZATION */
+    /* 11. CONSOLIDATED INITIALIZATION */
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
 
-      // Base layer initialization
       renderSensitiveAreas();
       renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
 
-      // Splash dismissal
       if (firmsApiKey) hideSplash();
       else showSplash();
 
-      // Top control listeners
+      // Minimal Locate Button
       document.getElementById('locateMeBtn').onclick = () => {
         if (!navigator.geolocation) return;
         navigator.geolocation.getCurrentPosition((pos) => {
@@ -1637,7 +1610,6 @@
       document.getElementById('radiusSelect').onchange = (e) => {
         operationalRadiusMiles = parseFloat(e.target.value);
         renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
-        document.getElementById('locateBtnLabel').textContent = `Locate Me (${operationalRadiusMiles} mi)`;
       };
 
       document.getElementById('presetSelect').onchange = (e) => {
@@ -1651,11 +1623,7 @@
         document.getElementById('layersDrawer').classList.add('translate-y-full');
       };
 
-      // Search listeners
-      document.getElementById('placeSearchBtn').onclick = () => searchUKPlace(document.getElementById('placeSearchInput').value);
-      document.getElementById('placeSearchInput').onkeydown = (e) => { if (e.key === 'Enter') searchUKPlace(e.target.value); };
-
-      // Timeline scrubber
+      // Scrubber
       const timeline = document.getElementById('timelineRange');
       timeline.oninput = (e) => setDay(e.target.value);
 
@@ -1676,7 +1644,7 @@
         }
       };
 
-      // Drawer navigation
+      // Drawers
       const layersDrawer = document.getElementById('layersDrawer');
       const inspectorDrawer = document.getElementById('inspectorDrawer');
       const v2ToolsDrawer = document.getElementById('v2ToolsDrawer');
@@ -1711,7 +1679,7 @@
         inspectZone(currentCenterLat, currentCenterLng, 'Current Area Focus');
       };
 
-      // Secondary configuration
+      // Primary metric layer selector
       document.querySelectorAll('input[name="primaryLayer"]').forEach(r => {
         r.onchange = (e) => {
           selectedActiveLayer = e.target.value;
@@ -1743,7 +1711,7 @@
         btn.textContent = body.classList.contains('hidden') ? '+' : '−';
       };
 
-      // Export handlers
+      // Export triggers
       document.getElementById('exportJSONBtn').onclick = () => {
         const payload = JSON.stringify({ generated: new Date().toISOString(), day: currentForecastDay, grid: getGridSnapshot() }, null, 2);
         triggerExport(`UK_Fire_Risk_D${currentForecastDay}_${Date.now()}.json`, payload, 'application/json');
@@ -1773,14 +1741,13 @@
       };
 
       document.getElementById('exportPNGBtn').onclick = () => {
-        showToast('Map snapshot: use your device screenshot shortcut (hardware accelerated).');
+        showToast('Map snapshot: use your device screenshot shortcut.');
       };
 
       map.on('click', (e) => {
         inspectZone(e.latlng.lat, e.latlng.lng, null);
       });
 
-      // Launch core async services
       loadAllValidatedWeather();
       fetchThermalHotspots();
       inspectZone(currentCenterLat, currentCenterLng, 'Cirencester & Cotswolds');
