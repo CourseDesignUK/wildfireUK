@@ -67,11 +67,11 @@
     }
 
     .glass-header {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.65);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     }
 
     .glass-panel {
@@ -222,7 +222,7 @@
     </div>
   </div>
 
-  <!-- FROSTED GLASS TOP APP HEADER -->
+  <!-- FROSTED GLASS TOP TOOLBAR -->
   <header class="pt-safe glass-header z-30 shrink-0 select-none">
     <div class="h-14 px-3.5 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5">
@@ -240,22 +240,22 @@
         </div>
       </div>
 
-      <!-- Action Controls -->
+      <!-- Action Controls (Frosted Glass Buttons) -->
       <div class="flex items-center gap-1.5">
-        <button id="basemapToggleBtn" type="button" class="h-[38px] px-3 rounded-xl bg-slate-900/80 border border-white/10 hover:border-white/25 active:scale-95 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer">
+        <button id="basemapToggleBtn" type="button" class="h-[38px] px-3 rounded-xl glass-card hover:border-white/30 active:scale-95 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer">
           <i data-lucide="layers-2" class="w-3.5 h-3.5 text-cyan-400"></i>
           <span id="basemapToggleLabel">OSM</span>
         </button>
 
-        <button id="openApiSettingsBtn" type="button" title="API Keys" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl bg-slate-900/80 border border-white/10 text-amber-400 hover:text-white active:scale-95 transition-all cursor-pointer">
+        <button id="openApiSettingsBtn" type="button" title="API Keys" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl glass-card hover:border-white/30 text-amber-400 hover:text-white active:scale-95 transition-all cursor-pointer">
           <i data-lucide="key" class="w-4 h-4"></i>
         </button>
 
-        <button id="openV2Tools" type="button" title="Operations Drawer" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl bg-slate-900/80 border border-white/10 text-cyan-400 hover:text-white active:scale-95 transition-all cursor-pointer">
+        <button id="openV2Tools" type="button" title="Operations Drawer" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl glass-card hover:border-white/30 text-cyan-400 hover:text-white active:scale-95 transition-all cursor-pointer">
           <i data-lucide="crosshair" class="w-4 h-4"></i>
         </button>
 
-        <button id="openLayersBtn" type="button" title="Layers" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl bg-slate-900/80 border border-white/10 text-slate-200 hover:text-white active:scale-95 transition-all cursor-pointer">
+        <button id="openLayersBtn" type="button" title="Layers" class="h-[38px] w-[38px] flex items-center justify-center rounded-xl glass-card hover:border-white/30 text-slate-200 hover:text-white active:scale-95 transition-all cursor-pointer">
           <i data-lucide="sliders" class="w-4 h-4"></i>
         </button>
       </div>
@@ -1606,7 +1606,6 @@
       renderSensitiveAreas();
       renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
 
-      // Keep API configuration modal suppressed on launch; accessible via key icon
       hideSplash();
 
       document.getElementById('locateMeBtn').onclick = () => {
@@ -1757,7 +1756,6 @@
         inspectZone(e.latlng.lat, e.latlng.lng, null);
       });
 
-      // Populate telemetry while keeping drawers tucked away
       populateInspectorData(currentCenterLat, currentCenterLng, 'Cirencester & Cotswolds');
       loadAllValidatedWeather();
       fetchThermalHotspots();
