@@ -882,7 +882,7 @@
     basemapToggleBtn.addEventListener('click', () => {
       map.removeLayer(basemapLayers[activeBasemapType]);
       activeBasemapType = activeBasemapType === 'osm' ? 'googleSat' : 'osm';
-      basemapToggleLabel.textContent = activeBasemapType === 'osm' ? 'OSM' : 'Google Sat';
+      basemapToggleLabel.textContent = activeBasemapType === 'osm' ? 'OSM' : 'Sat';
       basemapLayers[activeBasemapType].addTo(map);
       basemapLayers[activeBasemapType].bringToBack();
       showToast(`Basemap switched to ${activeBasemapType === 'osm' ? 'OpenStreetMap' : 'Google Satellite'}`);
