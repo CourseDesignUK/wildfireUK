@@ -226,7 +226,6 @@
   <header class="pt-safe glass-header z-30 shrink-0 select-none">
     <div class="h-14 px-3.5 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5">
-        <!-- Live Connection Status Dot -->
         <div class="relative flex items-center justify-center w-3 h-3 ml-0.5">
           <span id="headerLivePing" class="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 badge-pulse"></span>
           <span id="headerLiveDot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
@@ -267,13 +266,12 @@
   <main class="relative flex-1 w-full h-full overflow-hidden">
     <div id="map" class="w-full h-full z-10"></div>
 
-    <!-- Floating Minimal Action Button (Top Left) -->
+    <!-- Floating Action Button (Top Left) -->
     <div class="absolute top-3 left-3 z-20 flex items-center gap-2 pointer-events-auto">
       <button id="locateMeBtn" type="button" title="Locate GPS Position" class="h-10 w-10 rounded-2xl glass-panel hover:bg-slate-800/80 active:scale-95 border border-white/15 text-amber-400 flex items-center justify-center transition-all shadow-xl cursor-pointer">
         <i data-lucide="crosshair" class="w-4 h-4 stroke-[2.5]"></i>
       </button>
 
-      <!-- Compact Radius Dropdown -->
       <div class="h-10 px-2.5 rounded-2xl glass-panel text-slate-200 flex items-center gap-1 shadow-xl border border-white/15">
         <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400"></i>
         <select id="radiusSelect" class="bg-transparent text-xs font-mono text-amber-300 font-semibold focus:outline-none cursor-pointer appearance-none pr-3">
@@ -326,13 +324,12 @@
       <span id="statusToastMsg">Updating...</span>
     </div>
 
-    <!-- BOTTOM FIXED INTERACTIVE DECK: TIMELINE & WEATHER DOCK -->
+    <!-- BOTTOM FIXED INTERACTIVE DECK -->
     <div class="absolute bottom-2 left-2 right-2 z-20 flex flex-col gap-1.5 pointer-events-auto">
       
-      <!-- Weather Strip Along Bottom -->
+      <!-- Weather Strip -->
       <div id="floatingWeatherWidget" class="glass-panel rounded-2xl px-3.5 py-2 shadow-2xl cursor-pointer hover:border-white/30 transition-all" title="Click to inspect location telemetry">
         <div class="flex items-center justify-between gap-2">
-          
           <div class="flex items-center gap-2.5 shrink-0">
             <i id="weatherConditionIcon" data-lucide="sun" class="w-5 h-5 text-amber-400 shrink-0"></i>
             <div>
@@ -363,7 +360,6 @@
             <span class="text-[9px] font-mono text-cyan-300 uppercase block font-semibold leading-none">12:00 UTC</span>
             <span class="text-[8px] text-slate-400 leading-none">CFFDRS</span>
           </div>
-
         </div>
       </div>
 
@@ -540,7 +536,6 @@
     </div>
 
     <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar text-xs">
-      <!-- Area Focus Dashboard -->
       <div class="glass-card rounded-2xl p-3 space-y-2">
         <div class="flex items-center justify-between">
           <span class="font-bold text-white text-xs" id="v2DashboardTitle">Cirencester & Cotswolds</span>
@@ -570,7 +565,6 @@
         </div>
       </div>
 
-      <!-- Incident Simulator -->
       <div class="glass-card rounded-2xl p-3 space-y-2.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
@@ -616,7 +610,6 @@
         </div>
       </div>
 
-      <!-- Telemetry & Status Logs -->
       <div class="glass-card rounded-2xl p-3">
         <span class="text-[9px] font-bold text-slate-400 uppercase block mb-1">System Status & Data Log</span>
         <div id="v2StatusList" class="space-y-1 font-mono text-[9px] text-slate-300">
@@ -624,7 +617,6 @@
         </div>
       </div>
 
-      <!-- Operational Exports -->
       <div class="space-y-1.5">
         <span class="text-[9px] font-bold text-slate-400 uppercase block">Spatial Data Export</span>
         <div class="grid grid-cols-2 gap-2">
@@ -900,7 +892,7 @@
     const v2WindLayer = L.layerGroup().addTo(map);
     const v2FireLayer = L.layerGroup().addTo(map);
 
-    /* 5. CFFDRS / EFFIS & UKMO FORMULATION */
+    /* 5. CFFDRS FORMULATION */
     function getFWIClass(v) {
       if (v < 5.2) return { name: 'Very Low', fsi: 'FSI 1', color: '#52b788', crow: false };
       if (v < 11.2) return { name: 'Low', fsi: 'FSI 1-2', color: '#b7e4c7', crow: false };
@@ -1154,7 +1146,7 @@
         });
 
         rect.on('click', () => {
-          inspectZone(cell.lat, cell.lon, cell.name);
+          populateInspectorData(cell.lat, cell.lon, cell.name);
         });
 
         effisLayerGroup.addLayer(rect);
@@ -1481,7 +1473,7 @@
       lucide.createIcons();
     }
 
-    function inspectZone(lat, lon, customName) {
+    function populateInspectorData(lat, lon, customName) {
       const site = findNearestSite(lat, lon);
       const state = getSiteState({ name: site.name }, currentForecastDay);
 
@@ -1515,7 +1507,10 @@
       const forecastArray = [0, 1, 2, 3, 4, 5, 6].map(d => getSiteState({ name: site.name }, d).fwi);
       renderSparkline(forecastArray);
       updateBottomWeatherDock(state.temp, state.rh, state.wind, state.rain);
+    }
 
+    function inspectZone(lat, lon, customName) {
+      populateInspectorData(lat, lon, customName);
       document.getElementById('inspectorDrawer').classList.remove('translate-y-full');
       document.getElementById('layersDrawer').classList.add('translate-y-full');
       document.getElementById('v2ToolsDrawer').classList.add('translate-y-full');
@@ -1611,8 +1606,8 @@
       renderSensitiveAreas();
       renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
 
-      if (firmsApiKey) hideSplash();
-      else showSplash();
+      // Keep API configuration modal suppressed on launch; accessible via key icon
+      hideSplash();
 
       document.getElementById('locateMeBtn').onclick = () => {
         if (!navigator.geolocation) return;
@@ -1621,7 +1616,7 @@
           currentCenterLng = pos.coords.longitude;
           renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
           updateDashboard(currentCenterLat, currentCenterLng);
-          inspectZone(currentCenterLat, currentCenterLng, 'My Current Location');
+          populateInspectorData(currentCenterLat, currentCenterLng, 'My Current Location');
           showToast(`Centered on GPS: ${currentCenterLat.toFixed(2)}°, ${currentCenterLng.toFixed(2)}°`);
         });
       };
@@ -1638,7 +1633,7 @@
         currentCenterLng = parseFloat(lngStr);
         const name = e.target.options[e.target.selectedIndex].text;
         renderOperationalRadius(currentCenterLat, currentCenterLng, operationalRadiusMiles);
-        inspectZone(currentCenterLat, currentCenterLng, name);
+        populateInspectorData(currentCenterLat, currentCenterLng, name);
         document.getElementById('layersDrawer').classList.add('translate-y-full');
       };
 
@@ -1762,9 +1757,10 @@
         inspectZone(e.latlng.lat, e.latlng.lng, null);
       });
 
+      // Populate telemetry while keeping drawers tucked away
+      populateInspectorData(currentCenterLat, currentCenterLng, 'Cirencester & Cotswolds');
       loadAllValidatedWeather();
       fetchThermalHotspots();
-      inspectZone(currentCenterLat, currentCenterLng, 'Cirencester & Cotswolds');
     });
   </script>
 </body>
